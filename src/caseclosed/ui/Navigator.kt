@@ -52,6 +52,19 @@ class Navigator(
 
     fun refresh() = show()
 
+    private fun showUnlockedQuestionNotice(host: Container) {
+        val message = engine.takeUnlockedQuestionNotice()
+            ?: return
+
+        host.confirmDialog(
+            "Nueva pregunta disponible",
+            message,
+            "Continuar",
+        ) {
+            showUnlockedQuestionNotice(host)
+        }
+    }
+
     private fun show() {
         layer?.removeFromParent()
         val next = root.container()
@@ -68,5 +81,6 @@ class Navigator(
             Route.Board -> buildBoard(next, this)
             Route.Conclusion -> buildConclusion(next, this)
         }
+        showUnlockedQuestionNotice(next)
     }
 }
