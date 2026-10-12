@@ -1,5 +1,6 @@
 package caseclosed
 
+import caseclosed.data.CaseCatalog
 import caseclosed.engine.GameEngine
 import caseclosed.engine.GameSaves
 import caseclosed.model.CaseInvestigationState
@@ -7,6 +8,7 @@ import caseclosed.model.GlobalProgression
 import caseclosed.model.Verdict
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class EngineTest {
@@ -38,6 +40,33 @@ class EngineTest {
         assertTrue(reloaded.isCompleted("case_001"))
         assertEquals(0, reloaded.state.investigation("case_001").boardNodes.size)
         assertEquals("case_002", reloaded.progression.activeCaseId)
+    }
+
+    @Test
+    fun startCaseBeginsCleanAndKeepsProgressOnReturn() {
+        val saves = MemoryGameSaves()
+        val engine = GameEngine(saves, now = { 50L })
+        engine.load()
+        val caseId = engine.progression.activeCaseId
+        val authored = CaseCatalog.require(caseId).initialDiscoveredItemIds
+
+        assertFalse(engine.isStarted())
+        engine.startCase()
+        assertTrue(engine.isStarted())
+        assertEquals(authored, engine.investigation().discoveredItemIds)
+        assertTrue(engine.investigation().boardNodes.isEmpty())
+        assertTrue(engine.investigation().highlights.isEmpty())
+        assertTrue(engine.investigation().interviews.isEmpty())
+
+        engine.pin("item", authored.first(), "First look")
+        engine.startCase()
+        assertEquals(1, engine.investigation().boardNodes.size)
+
+        val reloaded = GameEngine(saves, now = { 50L })
+        reloaded.load()
+        assertTrue(reloaded.isStarted())
+        reloaded.startCase()
+        assertEquals(1, reloaded.investigation().boardNodes.size)
     }
 }
 

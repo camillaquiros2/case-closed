@@ -113,6 +113,8 @@ data class GlobalProgression(
     val activeCaseId: String = "case_001",
     val unlockedCaseIds: List<String> = listOf("case_001"),
     val completedCaseIds: List<String> = emptyList(),
+    /** Cases opened from the title screen. Their investigation is kept, not rebuilt. */
+    val startedCaseIds: List<String> = emptyList(),
 )
 
 @Serializable

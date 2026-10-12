@@ -3,6 +3,7 @@ import caseclosed.engine.GameEngine
 import caseclosed.persist.NativeGameSaves
 import caseclosed.ui.AssetBank
 import caseclosed.ui.Desk
+import caseclosed.ui.GameText
 import caseclosed.ui.Navigator
 import caseclosed.ui.Route
 import korlibs.image.color.Colors
@@ -17,7 +18,7 @@ import korlibs.math.geom.Size
 import korlibs.time.DateTime
 
 suspend fun main() = Korge(
-    title = "Desk Detective: Cold Case Files",
+    title = GameText.WINDOW_TITLE,
     windowSize = Size(405, 720),
     virtualSize = Size(Desk.W, Desk.H),
     backgroundColor = Colors["#140D0A"],
@@ -34,6 +35,6 @@ class GameScene : Scene() {
         assets.preload(CaseCatalog.imagePaths())
         val engine = GameEngine(NativeGameSaves(views.storage), now = { DateTime.now().unixMillisLong })
         engine.load()
-        Navigator(this, engine, assets).start(Route.Desk)
+        Navigator(this, engine, assets).start(Route.Title)
     }
 }
