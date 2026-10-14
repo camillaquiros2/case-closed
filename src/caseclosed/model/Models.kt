@@ -9,8 +9,6 @@ import kotlinx.serialization.Serializable
 
 data class CasePack(
     val data: CaseData,
-    /** Items already logged when a fresh investigation is opened. */
-    val initialDiscoveredItemIds: List<String> = emptyList(),
 )
 
 data class CaseData(
@@ -25,6 +23,8 @@ data class CaseData(
     val files: List<CaseFile>,
     val suspects: List<Suspect>,
     val items: List<Item>,
+    /** Overhead locations the detective can walk. Empty for a desk-only case. */
+    val scenes: List<CrimeScene> = emptyList(),
     val solution: CaseSolution,
     val phoneMessages: List<PhoneMessage>,
 )
@@ -82,6 +82,13 @@ data class Question(
     val revealsClue: String? = null,
 )
 
+enum class ItemOrigin {
+    /** Already in the locker when the case opens, because the files brought it in. */
+    FILE,
+    /** Sitting in a scene until the detective sends it to the desk. */
+    SCENE,
+}
+
 data class Item(
     val id: String,
     val name: String,
@@ -90,6 +97,40 @@ data class Item(
     val description: String,
     val findings: String,
     val relatedFileIds: List<String> = emptyList(),
+    /** False for objects that can be picked up but do not bear on the charge. */
+    val relevant: Boolean = true,
+    val origin: ItemOrigin = ItemOrigin.SCENE,
+)
+
+/** A rectangle in percentages of its image. Origin is the top left. 0–100. */
+data class PercentBox(
+    val x: Double,
+    val y: Double,
+    val w: Double,
+    val h: Double,
+)
+
+data class SceneItemSpot(
+    val itemId: String,
+    val bounds: PercentBox,
+)
+
+data class SubScene(
+    val id: String,
+    val name: String,
+    /** Close view. `images/cases/<case>/scenes/<scene>/<id>.png` */
+    val image: String,
+    /** Where this part sits on the overhead image. */
+    val bounds: PercentBox,
+    val items: List<SceneItemSpot> = emptyList(),
+)
+
+data class CrimeScene(
+    val id: String,
+    val name: String,
+    /** Photograph from above. `images/cases/<case>/scenes/<id>/overhead.png` */
+    val image: String,
+    val subscenes: List<SubScene>,
 )
 
 data class CaseSolution(

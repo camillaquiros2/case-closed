@@ -72,9 +72,24 @@ fun buildDesk(root: Container, nav: Navigator) {
         nav.push(Route.Conclusion)
     }
 
-    root.blockText(case.briefing, 36.0, docketY + 176.0, 648.0, 18.0, Palette.paper)
+    root.blockText(case.briefing, 36.0, docketY + 168.0, 648.0, 17.0, Palette.paper)
     root.text("${case.victim}  ·  ${case.subtitle}", textSize = 16.0, color = Palette.brass) {
-        position(36.0, Desk.H - 48.0)
+        position(36.0, Desk.H - 132.0)
+    }
+    if (case.scenes.isNotEmpty()) {
+        root.actionButton(
+            "Visit the Scene",
+            32.0,
+            Desk.H - 96.0,
+            656.0,
+            68.0,
+            Palette.greenFelt,
+            Palette.paper,
+        ) {
+            val scenes = case.scenes
+            if (scenes.size == 1) nav.push(Route.SceneMap(scenes.first().id))
+            else nav.push(Route.SceneList)
+        }
     }
 }
 

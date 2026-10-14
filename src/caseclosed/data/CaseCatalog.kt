@@ -4,6 +4,8 @@ import caseclosed.model.CaseData
 import caseclosed.model.CaseInvestigationState
 import caseclosed.model.CasePack
 import caseclosed.model.ClueDef
+import caseclosed.model.ItemOrigin
+import caseclosed.model.PercentBox
 
 /**
  * Every playable case. Add a new file, then append the pack here.
@@ -22,7 +24,9 @@ object CaseCatalog {
     }
 
     fun freshState(pack: CasePack): CaseInvestigationState =
-        CaseInvestigationState(discoveredItemIds = pack.initialDiscoveredItemIds)
+        CaseInvestigationState(
+            discoveredItemIds = pack.data.items.filter { it.origin == ItemOrigin.FILE }.map { it.id },
+        )
 
     fun findClue(case: CaseData, clueId: String): ClueDef? {
         for (file in case.files) {
@@ -49,6 +53,10 @@ object CaseCatalog {
             }
             for (suspect in case.suspects) if (suspect.portrait.isNotBlank()) paths += suspect.portrait
             for (item in case.items) if (item.image.isNotBlank()) paths += item.image
+            for (scene in case.scenes) {
+                if (scene.image.isNotBlank()) paths += scene.image
+                for (sub in scene.subscenes) if (sub.image.isNotBlank()) paths += sub.image
+            }
         }
         return paths.toList()
     }
@@ -83,9 +91,12 @@ object CaseCatalog {
                     question.revealsClue?.let { require(it in clueIds) { "${question.id} reveals unknown clue $it" } }
                 }
             }
-            for (itemId in pack.initialDiscoveredItemIds) {
-                require(itemId in items) { "${case.id} initially discovers unknown $itemId" }
+            for (item in case.items) {
+                if (item.id in case.solution.requiredEvidenceIds) {
+                    require(item.relevant) { "${case.id} requires irrelevant item ${item.id}" }
+                }
             }
+            validateScenes(case, items)
             for (file in case.files) {
                 for (id in file.relatedSuspectIds) require(id in suspects)
                 for (id in file.relatedItemIds) require(id in items)
@@ -104,6 +115,46 @@ object CaseCatalog {
             for (item in case.items) {
                 for (id in item.relatedFileIds) require(id in files) { "${item.id} related file $id missing" }
             }
+        }
+    }
+
+    private fun validateScenes(case: CaseData, items: Set<String>) {
+        val sceneIds = mutableSetOf<String>()
+        val placed = mutableSetOf<String>()
+        val idPattern = Regex("[a-z0-9_]+")
+        for (scene in case.scenes) {
+            require(scene.id.matches(idPattern)) { "${case.id} scene id ${scene.id}" }
+            require(scene.id !in sceneIds) { "${case.id} duplicate scene ${scene.id}" }
+            sceneIds += scene.id
+            val overhead = "images/cases/${case.id}/scenes/${scene.id}/overhead.png"
+            require(scene.image == overhead) { "${scene.id} overhead must be $overhead" }
+            val subIds = mutableSetOf<String>()
+            for (sub in scene.subscenes) {
+                require(sub.id.matches(idPattern)) { "${scene.id} subscene id ${sub.id}" }
+                require(sub.id !in subIds) { "${scene.id} duplicate subscene ${sub.id}" }
+                subIds += sub.id
+                val closeup = "images/cases/${case.id}/scenes/${scene.id}/${sub.id}.png"
+                require(sub.image == closeup) { "${sub.id} image must be $closeup" }
+                requireBox(sub.bounds, "${scene.id}/${sub.id}")
+                for (spot in sub.items) {
+                    require(spot.itemId in items) { "${sub.id} places unknown ${spot.itemId}" }
+                    require(spot.itemId !in placed) { "${spot.itemId} is placed twice" }
+                    placed += spot.itemId
+                    requireBox(spot.bounds, spot.itemId)
+                }
+            }
+        }
+        for (item in case.items) {
+            if (item.origin == ItemOrigin.SCENE) {
+                require(item.id in placed) { "${item.id} is a scene item with no spot" }
+            }
+        }
+    }
+
+    private fun requireBox(box: PercentBox, label: String) {
+        require(box.w > 0.0 && box.h > 0.0) { "$label has no area" }
+        require(box.x >= 0.0 && box.y >= 0.0 && box.x + box.w <= 100.01 && box.y + box.h <= 100.01) {
+            "$label sits outside the picture"
         }
     }
 }
