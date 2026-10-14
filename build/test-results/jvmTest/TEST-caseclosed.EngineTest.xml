@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuite name="caseclosed.EngineTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-10-13T06:57:20" hostname="ZACHARYHERNANDE" time="0.024">
-  <properties/>
-  <testcase name="pinConnectAndSolveStayInStateAndReloadFromSaves[jvm]" classname="caseclosed.EngineTest" time="0.024"/>
-  <system-out><![CDATA[]]></system-out>
-  <system-err><![CDATA[]]></system-err>
-</testsuite>
