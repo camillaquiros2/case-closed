@@ -35,9 +35,11 @@ class NativeGameSaves(private val storage: NativeStorage) : GameSaves {
         storage[caseKey(caseId)] = json.encodeToString(investigation)
     }
 
-    private fun caseKey(caseId: String) = "cc.case.$caseId"
+    //private fun caseKey(caseId: String) = "cc.case.$caseId"
+    private fun caseKey(caseId: String) = "cc.r13test010.case.$caseId"
 
     companion object {
-        const val KEY_PROGRESS = "cc.progression"
+        //const val KEY_PROGRESS = "cc.progression"
+        const val KEY_PROGRESS = "cc.r13test010.progression"
     }
 }

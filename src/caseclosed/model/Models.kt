@@ -27,6 +27,7 @@ data class CaseData(
     val items: List<Item>,
     val solution: CaseSolution,
     val phoneMessages: List<PhoneMessage>,
+    val discoveries: List<DiscoveryDef> = emptyList(),
 )
 
 data class CaseFile(
@@ -80,6 +81,7 @@ data class Question(
     val revealsItem: String? = null,
     /** Stable highlight id created from the matching document clue, if any. */
     val revealsClue: String? = null,
+    val requiredDiscoveryIds: List<String> = emptyList(),
 )
 
 data class Item(
@@ -106,6 +108,11 @@ data class PhoneMessage(
     val time: String,
     val message: String,
     val unread: Boolean,
+)
+
+data class DiscoveryDef(
+    val id: String,
+    val requiredDiscoveryIds: List<String> = emptyList(),
 )
 
 @Serializable

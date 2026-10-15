@@ -12,6 +12,62 @@ import caseclosed.model.Question
 
 /** Pure edits to one case investigation. The engine supplies ids and timestamps. */
 internal object InvestigationRules {
+    // Consulta los descubrimientos obtenidos
+    fun discoveredIds(
+        current: CaseInvestigationState,
+        case: CaseData,
+    ): Set<String> {
+        val possibleIds = case.discoveries.map { it.id }.toSet()
+
+        return (
+            current.discoveredItemIds +
+                current.highlights.map { it.id }
+            ).filter { it in possibleIds }.toSet()
+    }
+
+    // Comprueba los requisitos de una pista
+    fun canDiscover(
+        current: CaseInvestigationState,
+        case: CaseData,
+        id: String,
+    ): Boolean {
+        val discovery = case.discoveries
+            .firstOrNull { it.id == id }
+            ?: return false
+
+        val found = discoveredIds(current, case)
+
+        return id in found ||
+            discovery.requiredDiscoveryIds.all { it in found }
+    }
+    // Comprueba si la pregunta pertenece al sospechoso y cumple los requisitos
+    fun canAskQuestion(
+        current: CaseInvestigationState,
+        case: CaseData,
+        suspectId: String,
+        question: Question,
+    ): Boolean {
+        val authoredQuestion = case.suspects
+            .firstOrNull { it.id == suspectId }
+            ?.questions
+            ?.firstOrNull { it.id == question.id }
+            ?: return false
+
+        if (authoredQuestion != question) return false
+
+        val found = discoveredIds(current, case)
+
+        val requirementsMet = question.requiredDiscoveryIds
+            .all { it in found }
+
+        val rewardsAvailable = listOfNotNull(
+            question.revealsItem,
+            question.revealsClue,
+        ).all { canDiscover(current, case, it) }
+
+        return requirementsMet && rewardsAvailable
+    }
+
     fun markMessagesRead(current: CaseInvestigationState, messageIds: List<String>): CaseInvestigationState =
         current.copy(readMessageIds = (current.readMessageIds + messageIds).distinct())
 
@@ -52,6 +108,9 @@ internal object InvestigationRules {
         question: Question,
         now: Long,
     ): CaseInvestigationState {
+        if (!canAskQuestion(current, case, suspectId, question)) {
+            return current
+        }
         val prev = current.interviews[suspectId] ?: InterviewState()
         if (question.id in prev.askedQuestionIds) return current
         val interview = prev.copy(
@@ -101,9 +160,19 @@ internal object InvestigationRules {
     fun setItemNote(current: CaseInvestigationState, itemId: String, note: String): CaseInvestigationState =
         current.copy(itemNotes = current.itemNotes + (itemId to note))
 
-    fun discoverItem(current: CaseInvestigationState, itemId: String): CaseInvestigationState =
-        if (itemId in current.discoveredItemIds) current
-        else current.copy(discoveredItemIds = current.discoveredItemIds + itemId)
+    fun discoverItem(
+        current: CaseInvestigationState,
+        case: CaseData,
+        itemId: String,
+    ): CaseInvestigationState {
+        if (case.items.none { it.id == itemId }) return current
+        if (!canDiscover(current, case, itemId)) return current
+        if (itemId in current.discoveredItemIds) return current
+
+        return current.copy(
+            discoveredItemIds = current.discoveredItemIds + itemId,
+        )
+    }
 
     fun setScroll(current: CaseInvestigationState, fileId: String, offset: Double): CaseInvestigationState =
         current.copy(documentScrollPositions = current.documentScrollPositions + (fileId to offset))

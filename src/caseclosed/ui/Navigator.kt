@@ -3,6 +3,11 @@ package caseclosed.ui
 import caseclosed.engine.GameEngine
 import korlibs.korge.view.Container
 import korlibs.korge.view.container
+import korlibs.korge.view.addUpdater
+import korlibs.korge.view.position
+import korlibs.korge.view.solidRect
+import korlibs.korge.view.text
+import korlibs.time.DateTime
 
 sealed class Route {
     data object Title : Route()
@@ -53,6 +58,87 @@ class Navigator(
 
     fun refresh() = show()
 
+    private fun showUnlockedQuestionNotice(host: Container) {
+        val notices = mutableListOf<String>()
+        while (true) {
+            val message = engine.takeUnlockedQuestionNotice()
+                ?: break
+
+            notices += message
+        }
+        if (notices.isEmpty()) return
+        val indicator = host.container {
+            position(24.0, Desk.HEADER + 8.0)
+            mouseEnabled = false
+        }
+        var index = 0
+        var expiresAt = 0L
+
+        fun displayNotice() {
+            indicator.clearChildren()
+            val message = notices[index].substringBefore("\n")
+            val isItem = message.startsWith("Objeto descubierto:")
+            val title = if (isItem) {
+                "¡Objeto descubierto!"
+            } else {
+                "¡Nueva pregunta disponible!"
+            }
+            val detail = if (isItem) {
+                message.removePrefix("Objeto descubierto:").trim()
+            } else {
+                message
+            }
+            val width = Desk.W - 48.0
+            val textWidth = width - 32.0
+            val textSize = 18.0
+            val lines = wrapLines(
+                detail,
+                textWidth,
+                textSize,
+            )
+            val height = 64.0 +
+                wordWrapHeight(lines.size, textSize)
+            indicator.solidRect(
+                width,
+                height,
+                Palette.gold,
+            )
+            indicator.solidRect(
+                width,
+                4.0,
+                Palette.wax,
+            )
+            indicator.text(
+                title,
+                textSize = 20.0,
+                color = Palette.ink,
+            ) {
+                position(16.0, 14.0)
+            }
+            indicator.blockText(
+                detail,
+                16.0,
+                46.0,
+                textWidth,
+                textSize,
+                Palette.ink,
+            )
+            expiresAt = DateTime.now().unixMillisLong + 5_000L
+        }
+        displayNotice()
+        indicator.addUpdater {
+            if (DateTime.now().unixMillisLong >= expiresAt) {
+                index += 1
+
+                if (index < notices.size) {
+                    displayNotice()
+                } else {
+                    indicator.removeFromParent()
+                }
+            }
+        }
+    }
+
     private fun show() {
         layer?.removeFromParent()
         val next = root.container()
@@ -70,5 +156,6 @@ class Navigator(
             Route.Board -> buildBoard(next, this)
             Route.Conclusion -> buildConclusion(next, this)
         }
+        showUnlockedQuestionNotice(next)
     }
 }
