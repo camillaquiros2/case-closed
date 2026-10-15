@@ -13,3 +13,6 @@ kotlin-js-store/
 null.frame
 null.socket
 .DS_Store
+settings.gradle.kts
+build.gradle.kts
+gradlew
