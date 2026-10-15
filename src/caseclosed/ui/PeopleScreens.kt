@@ -119,12 +119,26 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
         val asked = interview?.askedQuestionIds?.toSet().orEmpty()
         for (question in suspect.questions) {
             if (question.id in asked) continue
+            val available = engine.canAskQuestion(
+                suspectId,
+                question,
+            )
+            if (!available) continue
             val rowY = y
-            solidRect(640.0, 72.0, Palette.paper) { position(8.0, rowY) }
-            text(clipText(question.question, 64), textSize = 16.0, color = Palette.ink) { position(20.0, rowY + 24.0) }
+            solidRect(640.0, 72.0, Palette.paper) {
+                position(8.0, rowY)
+            }
+            text(
+                clipText(question.question, 64),
+                textSize = 16.0,
+                color = Palette.ink,
+            ) {
+                position(20.0, rowY + 24.0)
+            }
             solidRect(640.0, 72.0, Colors.WHITE) {
                 position(8.0, rowY)
                 alpha = 0.01
+
                 onClick {
                     engine.askQuestion(suspectId, question)
                     nav.refresh()
@@ -252,7 +266,28 @@ fun buildItemDetail(root: Container, nav: Navigator, itemId: String) {
     val engine = nav.engine
     val case = engine.activeCase()
     val item = case.items.first { it.id == itemId }
-    engine.discoverItem(itemId)
+    if (itemId !in engine.investigation().discoveredItemIds) {
+        root.solidRect(
+            Desk.W,
+            Desk.H,
+            Palette.mahoganyDeep,
+        )
+        root.chrome(
+            "Evidence unavailable",
+            case.title,
+            nav,
+            true,
+        )
+        root.blockText(
+            "This evidence has not been discovered yet.",
+            24.0,
+            Desk.HEADER + 24.0,
+            640.0,
+            18.0,
+            Palette.paper,
+        )
+        return
+    }
     val note = engine.investigation().itemNotes[itemId].orEmpty()
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
     root.chrome(clipText(item.name, 22), "Forensic locker", nav, true)

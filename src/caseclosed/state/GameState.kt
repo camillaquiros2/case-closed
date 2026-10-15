@@ -24,6 +24,8 @@ data class GameState(
 
     fun isCompleted(caseId: String): Boolean = caseId in progression.completedCaseIds
 
+    fun isStarted(caseId: String = progression.activeCaseId): Boolean = caseId in progression.startedCaseIds
+
     fun unreadCount(): Int {
         val read = investigation().readMessageIds.toSet()
         return activeCase().phoneMessages.count { it.unread && it.id !in read }

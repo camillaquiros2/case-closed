@@ -15,6 +15,7 @@ import caseclosed.model.PhoneMessage
 import caseclosed.model.Question
 import caseclosed.model.SubScene
 import caseclosed.model.Suspect
+import caseclosed.model.DiscoveryDef
 
 private const val SCENE = "images/cases/case_002/scenes/warehouse/overhead.png"
 
@@ -198,6 +199,7 @@ internal val case002 = CasePack(
                         question = "The clerk says the hook was empty. What is in your desk?",
                         answer = "Then search the desk. I keep a spare for storms. That does not put me on the pier. Take it, if you are so sure of a key.",
                         revealsItem = "item_key",
+                        requiredDiscoveryIds = listOf("hl_203"),
                     ),
                     Question(
                         id = "q_s3",
@@ -314,6 +316,21 @@ internal val case002 = CasePack(
                 time = "2:40 a.m.",
                 message = "One blow to the temple. He died where he fell, just inside the door, between twenty to midnight and five to midnight. Not later. Do not let a midnight alibi confuse you.",
                 unread = true,
+            ),
+        ),
+
+        discoveries = listOf(
+            DiscoveryDef("item_ledger"),
+            DiscoveryDef(
+                "item_key",
+                requiredDiscoveryIds = listOf("hl_203"),
+            ),
+            DiscoveryDef("hl_201"),
+            DiscoveryDef("hl_202"),
+            DiscoveryDef("hl_203"),
+            DiscoveryDef(
+                "hl_204",
+                requiredDiscoveryIds = listOf("item_ledger"),
             ),
         ),
     ),

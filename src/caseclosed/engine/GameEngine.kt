@@ -17,6 +17,7 @@ class GameEngine(
     private val now: () -> Long,
 ) {
     private val ids = IdFactory(now)
+    private val unlockedQuestionNotices = mutableListOf<String>()
 
     var state: GameState = GameState()
         private set
@@ -27,11 +28,43 @@ class GameEngine(
 
     fun activeCase(): CaseData = state.activeCase()
 
+    fun takeUnlockedQuestionNotice(): String? {
+        if (unlockedQuestionNotices.isEmpty()) return null
+
+        return unlockedQuestionNotices.removeAt(0)
+    }
+
+    fun discoveredIds(): Set<String> =
+        InvestigationRules.discoveredIds(
+            investigation(),
+            activeCase(),
+        )
+
+    fun canDiscover(id: String): Boolean =
+        InvestigationRules.canDiscover(
+            investigation(),
+            activeCase(),
+            id,
+        )
+
+    fun canAskQuestion(
+        suspectId: String,
+        question: Question,
+    ): Boolean =
+        InvestigationRules.canAskQuestion(
+            investigation(),
+            activeCase(),
+            suspectId,
+            question,
+        )
+
     fun unreadCount(): Int = state.unreadCount()
 
     fun isPinned(type: String, entityId: String): Boolean = state.isPinned(type, entityId)
 
     fun isCompleted(caseId: String): Boolean = state.isCompleted(caseId)
+
+    fun isStarted(caseId: String = progression.activeCaseId): Boolean = state.isStarted(caseId)
 
     fun load() {
         var progression = saves.loadProgress() ?: GlobalProgression()
@@ -59,6 +92,25 @@ class GameEngine(
             investigations = investigations,
         )
         saves.saveProgress(state.progression)
+    }
+
+    /**
+     * Opens the active case from the title screen.
+     * The first time it lays out the authored starting state; after that it keeps the saved investigation.
+     */
+    fun startCase() {
+        val caseId = state.progression.activeCaseId
+        if (state.isStarted(caseId)) return
+        val fresh = CaseCatalog.freshState(CaseCatalog.require(caseId))
+        val progression = state.progression.copy(
+            startedCaseIds = state.progression.startedCaseIds + caseId,
+        )
+        state = state.copy(
+            progression = progression,
+            investigations = state.investigations + (caseId to fresh),
+        )
+        saves.saveCase(caseId, fresh)
+        saves.saveProgress(progression)
     }
 
     fun markMessagesRead() {
@@ -101,8 +153,17 @@ class GameEngine(
         edit { InvestigationRules.setItemNote(it, itemId, note) }
     }
 
-    fun discoverItem(itemId: String) {
-        edit { InvestigationRules.discoverItem(it, itemId) }
+    fun discoverItem(itemId: String): Boolean {
+        val case = activeCase()
+
+        if (case.items.none { it.id == itemId }) return false
+        if (!canDiscover(itemId)) return false
+
+        edit {
+            InvestigationRules.discoverItem(it, case, itemId)
+        }
+
+        return itemId in investigation().discoveredItemIds
     }
 
     fun setScroll(fileId: String, offset: Double) {
@@ -183,10 +244,74 @@ class GameEngine(
         return next
     }
 
-    private fun edit(block: (CaseInvestigationState) -> CaseInvestigationState) {
+    private fun edit(
+        block: (CaseInvestigationState) -> CaseInvestigationState,
+    ) {
         val id = state.progression.activeCaseId
+        val case = activeCase()
+        val itemsBefore = investigation().discoveredItemIds.toSet()
+        val availableBefore = case.suspects.flatMap { suspect ->
+            suspect.questions
+                .filter { canAskQuestion(suspect.id, it) }
+                .map { it.id }
+        }.toSet()
         state = state.withInvestigation(id, block)
         saves.saveCase(id, state.investigation(id))
+        val current = investigation()
+        val newItemIds = current.discoveredItemIds.filter {
+            it !in itemsBefore
+        }
+        for (itemId in newItemIds) {
+            val item = case.items.firstOrNull {
+                it.id == itemId
+            } ?: continue
+
+            unlockedQuestionNotices += "Objeto descubierto: ${item.name}"
+        }
+        for (suspect in case.suspects) {
+            val asked = current.interviews[suspect.id]
+                ?.askedQuestionIds
+                .orEmpty()
+            for (question in suspect.questions) {
+                if (question.id in availableBefore) continue
+                if (question.id in asked) continue
+                if (!canAskQuestion(suspect.id, question)) continue
+                val requirementIds = (
+                    question.requiredDiscoveryIds +
+                        listOfNotNull(
+                            question.revealsItem,
+                            question.revealsClue,
+                        ).flatMap { rewardId ->
+                            case.discoveries
+                                .firstOrNull { it.id == rewardId }
+                                ?.requiredDiscoveryIds
+                                .orEmpty()
+                        }
+                    ).distinct()
+                val evidenceNames = requirementIds.map { discoveryId ->
+                    case.items
+                        .firstOrNull { it.id == discoveryId }
+                        ?.name
+                        ?: CaseCatalog.findClue(case, discoveryId)
+                            ?.description
+                        ?: discoveryId
+                }
+                val evidenceText = evidenceNames
+                    .mapIndexed { index, name ->
+                        "${index + 1}. $name"
+                    }
+                    .joinToString("\n")
+                val message = buildString {
+                    append("${suspect.name}: ${question.question}")
+
+                    if (evidenceText.isNotBlank()) {
+                        append("\n\nDesbloqueada gracias a:\n")
+                        append(evidenceText)
+                    }
+                }
+                unlockedQuestionNotices += message
+            }
+        }
     }
 }
 

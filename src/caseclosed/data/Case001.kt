@@ -5,6 +5,7 @@ import caseclosed.model.CaseFile
 import caseclosed.model.CasePack
 import caseclosed.model.CaseSolution
 import caseclosed.model.ClueDef
+import caseclosed.model.DiscoveryDef
 import caseclosed.model.CrimeScene
 import caseclosed.model.DocReference
 import caseclosed.model.FileSection
@@ -19,6 +20,7 @@ import caseclosed.model.Suspect
 private const val SCENE = "images/cases/case_001/scenes/manor_study/overhead.png"
 
 internal val case001 = CasePack(
+    initialDiscoveredItemIds = listOf("item_brandy", "item_pillbox"),
     data = CaseData(
         id = "case_001",
         caseNumber = "CC-1924-014",
@@ -288,6 +290,7 @@ internal val case001 = CasePack(
                         question = "¿Qué contiene el frasco ámbar?",
                         answer = "Belladona, diluida para preparar un linimento. No lo he abierto en una semana. Lo encontrará en mi maletín si insiste en registrar las pertenencias de un médico.",
                         revealsItem = "item_vial",
+                        requiredDiscoveryIds = listOf("hl_002", "hl_003"),
                     ),
                     Question(
                         id = "q_r3",
@@ -418,6 +421,27 @@ internal val case001 = CasePack(
                 time = "1:05 a. m.",
                 message = "Pupilas muy dilatadas, piel enrojecida, garganta seca. Es belladona, no la digitalina de su pastillero. Busca una tintura concentrada. Las pastillas no lo mataron.",
                 unread = true,
+            ),
+        ),
+
+        discoveries = listOf(
+            DiscoveryDef("item_brandy"),
+            DiscoveryDef("item_pillbox"),
+            DiscoveryDef("item_telegram"),
+            DiscoveryDef(
+                "item_vial",
+                requiredDiscoveryIds = listOf("hl_002", "hl_003"),
+            ),
+            DiscoveryDef("hl_001"),
+            DiscoveryDef(
+                "hl_002",
+                requiredDiscoveryIds = listOf("item_brandy"),
+            ),
+            DiscoveryDef("hl_003"),
+            DiscoveryDef("hl_004"),
+            DiscoveryDef(
+                "hl_005",
+                requiredDiscoveryIds = listOf("item_brandy"),
             ),
         ),
     ),

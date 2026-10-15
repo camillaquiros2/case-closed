@@ -27,6 +27,7 @@ data class CaseData(
     val scenes: List<CrimeScene> = emptyList(),
     val solution: CaseSolution,
     val phoneMessages: List<PhoneMessage>,
+    val discoveries: List<DiscoveryDef> = emptyList(),
 )
 
 data class CaseFile(
@@ -80,6 +81,7 @@ data class Question(
     val revealsItem: String? = null,
     /** Stable highlight id created from the matching document clue, if any. */
     val revealsClue: String? = null,
+    val requiredDiscoveryIds: List<String> = emptyList(),
 )
 
 enum class ItemOrigin {
@@ -149,11 +151,18 @@ data class PhoneMessage(
     val unread: Boolean,
 )
 
+data class DiscoveryDef(
+    val id: String,
+    val requiredDiscoveryIds: List<String> = emptyList(),
+)
+
 @Serializable
 data class GlobalProgression(
     val activeCaseId: String = "case_001",
     val unlockedCaseIds: List<String> = listOf("case_001"),
     val completedCaseIds: List<String> = emptyList(),
+    /** Cases opened from the title screen. Their investigation is kept, not rebuilt. */
+    val startedCaseIds: List<String> = emptyList(),
 )
 
 @Serializable
