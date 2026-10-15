@@ -33,6 +33,8 @@ class GameEngine(
 
     fun isCompleted(caseId: String): Boolean = state.isCompleted(caseId)
 
+    fun isStarted(caseId: String = progression.activeCaseId): Boolean = state.isStarted(caseId)
+
     fun load() {
         var progression = saves.loadProgress() ?: GlobalProgression()
         val known = CaseCatalog.packs.map { it.data.id }
@@ -59,6 +61,25 @@ class GameEngine(
             investigations = investigations,
         )
         saves.saveProgress(state.progression)
+    }
+
+    /**
+     * Opens the active case from the title screen.
+     * The first time it lays out the authored starting state; after that it keeps the saved investigation.
+     */
+    fun startCase() {
+        val caseId = state.progression.activeCaseId
+        if (state.isStarted(caseId)) return
+        val fresh = CaseCatalog.freshState(CaseCatalog.require(caseId))
+        val progression = state.progression.copy(
+            startedCaseIds = state.progression.startedCaseIds + caseId,
+        )
+        state = state.copy(
+            progression = progression,
+            investigations = state.investigations + (caseId to fresh),
+        )
+        saves.saveCase(caseId, fresh)
+        saves.saveProgress(progression)
     }
 
     fun markMessagesRead() {

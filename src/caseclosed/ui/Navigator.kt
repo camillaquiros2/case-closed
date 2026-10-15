@@ -5,6 +5,7 @@ import korlibs.korge.view.Container
 import korlibs.korge.view.container
 
 sealed class Route {
+    data object Title : Route()
     data object Desk : Route()
     data object Phone : Route()
     data object Files : Route()
@@ -57,6 +58,7 @@ class Navigator(
         val next = root.container()
         layer = next
         when (val route = stack.last()) {
+            Route.Title -> buildTitle(next, this)
             Route.Desk -> buildDesk(next, this)
             Route.Phone -> buildPhone(next, this)
             Route.Files -> buildFiles(next, this)

@@ -151,11 +151,15 @@ private fun openCaseDrawer(root: Container, nav: Navigator) {
                 onClick {
                     nav.engine.setActiveCase(id)
                     dismiss()
-                    nav.refresh()
+                    if (nav.engine.isStarted()) nav.refresh() else nav.go(Route.Title)
                 }
             }
             y += 100.0
         }
         actionButton("Close", 0.0, 560.0, 180.0, 52.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton(GameText.MAIN_MENU, 200.0, 560.0, 200.0, 52.0, Palette.wax, Palette.paper) {
+            dismiss()
+            nav.go(Route.Title)
+        }
     }
 }
