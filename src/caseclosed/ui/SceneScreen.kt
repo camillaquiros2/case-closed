@@ -196,13 +196,13 @@ private fun Container.hotspot(
     val h = (frame.h * box.h / 100.0).coerceAtLeast(28.0)
     solidRect(w, h, tint) {
         position(x, y)
-        alpha = 0.38
+        alpha = 0.2
     }
     solidRect(w, 3.0, Palette.paper) { position(x, y) }
     val plateW = (label.length * 8.5 + 16.0).coerceAtMost(w - 8.0).coerceAtLeast(28.0)
     solidRect(plateW, 22.0, Palette.mahoganyDeep) {
         position(x + 4.0, y + 6.0)
-        alpha = 0.88
+        alpha = 0.2
     }
     text(clipText(label, 18), textSize = 14.0, color = Palette.paper) { position(x + 8.0, y + 8.0) }
     solidRect(w, h, Colors.WHITE) {

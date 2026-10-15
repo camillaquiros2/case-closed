@@ -365,18 +365,18 @@ internal val case001 = CasePack(
                         id = "escritorio",
                         name = "Escritorio",
                         image = "images/cases/case_001/scenes/manor_study/escritorio.png",
-                        bounds = box(18.0, 34.0, 46.0, 36.0),
+                        bounds = box(24.0, 28.0, 37.0, 36.0),
                         items = listOf(
-                            spot("item_brandy", 8.0, 48.0, 28.0, 36.0),
-                            spot("item_pillbox", 40.0, 18.0, 24.0, 30.0),
-                            spot("item_telegram", 68.0, 52.0, 26.0, 32.0),
+                            spot("item_brandy", 8.0, 43.0, 28.0, 36.0),
+                            spot("item_pillbox", 36.0, 14.0, 24.0, 27.0),
+                            spot("item_telegram", 55.0, 38.0, 43+.0, 40.0),
                         ),
                     ),
                     SubScene(
                         id = "maletin",
                         name = "Maletín",
                         image = "images/cases/case_001/scenes/manor_study/maletin.png",
-                        bounds = box(4.0, 72.0, 28.0, 24.0),
+                        bounds = box(24.0, 66.0, 22.0, 22.0),
                         items = listOf(
                             spot("item_vial", 28.0, 30.0, 36.0, 40.0),
                         ),

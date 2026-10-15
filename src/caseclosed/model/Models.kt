@@ -9,6 +9,7 @@ import kotlinx.serialization.Serializable
 
 data class CasePack(
     val data: CaseData,
+    val initialDiscoveredItemIds: List<String> = emptyList(),
 )
 
 data class CaseData(
