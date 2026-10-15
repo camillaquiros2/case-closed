@@ -21,6 +21,10 @@ sealed class Route {
     data class ItemDetail(val itemId: String) : Route()
     data object Board : Route()
     data object Conclusion : Route()
+    data object SceneList : Route()
+    data class SceneMap(val sceneId: String) : Route()
+    data class SceneCloseup(val sceneId: String, val subSceneId: String) : Route()
+    data class SceneFind(val sceneId: String, val subSceneId: String, val itemId: String) : Route()
 }
 
 class Navigator(
@@ -155,6 +159,10 @@ class Navigator(
             is Route.ItemDetail -> buildItemDetail(next, this, route.itemId)
             Route.Board -> buildBoard(next, this)
             Route.Conclusion -> buildConclusion(next, this)
+            Route.SceneList -> buildSceneList(next, this)
+            is Route.SceneMap -> buildSceneMap(next, this, route.sceneId)
+            is Route.SceneCloseup -> buildSceneCloseup(next, this, route.sceneId, route.subSceneId)
+            is Route.SceneFind -> buildSceneFind(next, this, route.sceneId, route.subSceneId, route.itemId)
         }
         showUnlockedQuestionNotice(next)
     }

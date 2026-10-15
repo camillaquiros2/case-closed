@@ -5,19 +5,21 @@ import caseclosed.model.CaseFile
 import caseclosed.model.CasePack
 import caseclosed.model.CaseSolution
 import caseclosed.model.ClueDef
+import caseclosed.model.CrimeScene
 import caseclosed.model.DocReference
 import caseclosed.model.FileSection
 import caseclosed.model.ImageRef
 import caseclosed.model.Item
+import caseclosed.model.ItemOrigin
 import caseclosed.model.PhoneMessage
 import caseclosed.model.Question
+import caseclosed.model.SubScene
 import caseclosed.model.Suspect
 import caseclosed.model.DiscoveryDef
 
-private const val SCENE = "images/cases/case_002/scenes/scene_pier.png"
+private const val SCENE = "images/cases/case_002/scenes/warehouse/overhead.png"
 
 internal val case002 = CasePack(
-    initialDiscoveredItemIds = listOf("item_ledger"),
     data = CaseData(
         id = "case_002",
         caseNumber = "CC-1925-009",
@@ -217,6 +219,7 @@ internal val case002 = CasePack(
                 description = "A narrow oilcloth book found in Eddie Crowe's coat. The columns record cargo that never reached the customs shed.",
                 findings = "Payments are initialed S.V. One page is copied in the watchman's own writing and folded into the binding, as if he meant to carry it to the police.",
                 relatedFileIds = listOf("file_201", "file_204"),
+                origin = ItemOrigin.FILE,
             ),
             Item(
                 id = "item_key",
@@ -226,6 +229,67 @@ internal val case002 = CasePack(
                 description = "A heavy brass skeleton key recovered from the top drawer of Captain Vance's desk. It opens Warehouse 9.",
                 findings = "The teeth match the Warehouse 9 lock. Varnish on the bow matches the harbor master's desk, not the dock office lockbox. Malone's key was still signed in.",
                 relatedFileIds = listOf("file_204", "file_201"),
+                origin = ItemOrigin.SCENE,
+            ),
+            Item(
+                id = "item_flask",
+                name = "Dented Tin Flask",
+                image = "images/cases/case_002/items/item_flask.png",
+                shortNotes = "Cheap rum. No blood and no warehouse varnish.",
+                description = "A dented tin flask under a crate inside Warehouse 9. It still smells of rum.",
+                findings = "The flask belongs to no one on the pier roster. It has no blood, no key marks, and nothing to do with the ledger.",
+                relevant = false,
+                origin = ItemOrigin.SCENE,
+            ),
+        ),
+
+        scenes = listOf(
+            CrimeScene(
+                id = "warehouse",
+                name = "Warehouse 9",
+                image = SCENE,
+                subscenes = listOf(
+                    SubScene(
+                        id = "doorway",
+                        name = "The Door",
+                        image = "images/cases/case_002/scenes/warehouse/doorway.png",
+                        bounds = box(6.0, 18.0, 30.0, 50.0),
+                    ),
+                    SubScene(
+                        id = "coat",
+                        name = "The Coat",
+                        image = "images/cases/case_002/scenes/warehouse/coat.png",
+                        bounds = box(40.0, 28.0, 28.0, 40.0),
+                        items = listOf(
+                            spot("item_ledger", 30.0, 34.0, 36.0, 32.0),
+                        ),
+                    ),
+                    SubScene(
+                        id = "crates",
+                        name = "The Crates",
+                        image = "images/cases/case_002/scenes/warehouse/crates.png",
+                        bounds = box(70.0, 55.0, 24.0, 32.0),
+                        items = listOf(
+                            spot("item_flask", 24.0, 28.0, 40.0, 36.0),
+                        ),
+                    ),
+                ),
+            ),
+            CrimeScene(
+                id = "harbor_office",
+                name = "Harbor Master's Office",
+                image = "images/cases/case_002/scenes/harbor_office/overhead.png",
+                subscenes = listOf(
+                    SubScene(
+                        id = "desk",
+                        name = "The Desk",
+                        image = "images/cases/case_002/scenes/harbor_office/desk.png",
+                        bounds = box(22.0, 30.0, 56.0, 40.0),
+                        items = listOf(
+                            spot("item_key", 40.0, 38.0, 22.0, 28.0),
+                        ),
+                    ),
+                ),
             ),
         ),
         solution = CaseSolution(

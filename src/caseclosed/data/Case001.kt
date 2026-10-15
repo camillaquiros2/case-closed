@@ -6,15 +6,18 @@ import caseclosed.model.CasePack
 import caseclosed.model.CaseSolution
 import caseclosed.model.ClueDef
 import caseclosed.model.DiscoveryDef
+import caseclosed.model.CrimeScene
 import caseclosed.model.DocReference
 import caseclosed.model.FileSection
 import caseclosed.model.ImageRef
 import caseclosed.model.Item
+import caseclosed.model.ItemOrigin
 import caseclosed.model.PhoneMessage
 import caseclosed.model.Question
+import caseclosed.model.SubScene
 import caseclosed.model.Suspect
 
-private const val SCENE = "images/cases/case_001/scenes/scene_manor_study.png"
+private const val SCENE = "images/cases/case_001/scenes/manor_study/overhead.png"
 
 internal val case001 = CasePack(
     initialDiscoveredItemIds = listOf("item_brandy", "item_pillbox"),
@@ -306,7 +309,8 @@ internal val case001 = CasePack(
                 shortNotes = "Residuo blanco en la copa. Huellas de Reid en el borde.",
                 description = "La copa nocturna de Lord Arthur, recogida del escritorio. El brandy está medio bebido. Una película blanquecina permanece adherida al interior.",
                 findings = "El residuo es belladona concentrada. Las huellas del borde coinciden con las del Dr. Alistair Reid. Las huellas de Morris Graves aparecen únicamente en el asa de la bandeja.",
-                relatedFileIds = listOf("file_001", "file_002", "file_003")
+                relatedFileIds = listOf("file_001", "file_002", "file_003"),
+                origin = ItemOrigin.FILE,
             ),
             Item(
                 id = "item_pillbox",
@@ -316,6 +320,7 @@ internal val case001 = CasePack(
                 description = "Un antiguo pastillero de plata encontrado abierto sobre el secante. La tapa lleva grabadas las iniciales A.R. Todos los compartimentos contienen sus tabletas.",
                 findings = "Las tabletas contienen digitalina, están completas y no fueron envenenadas. El monograma coincide con el estuche de prescripciones del Dr. Alistair Reid. La forense descarta las pastillas como causa de muerte.",
                 relatedFileIds = listOf("file_001"),
+                origin = ItemOrigin.FILE,
             ),
             Item(
                 id = "item_telegram",
@@ -325,6 +330,8 @@ internal val case001 = CasePack(
                 description = "Un telegrama de Western Union, roto y posteriormente alisado. Exige el pago de una deuda de juego antes de finalizar el mes.",
                 findings = "No contiene rastros de veneno ni huellas útiles. Demuestra la deuda de Julian, pero nada relacionado con la copa.",
                 relatedFileIds = listOf("file_004"),
+                relevant = false,
+                origin = ItemOrigin.SCENE,
             ),
             Item(
                 id = "item_vial",
@@ -334,6 +341,56 @@ internal val case001 = CasePack(
                 description = "Un pequeño frasco ámbar etiquetado como Tintura de Belladona, recuperado del maletín negro del Dr. Reid en la sala de armas.",
                 findings = "Faltan aproximadamente dos dracmas. La cantidad coincide con la concentración encontrada en la copa. El tapón fue abierto recientemente.",
                 relatedFileIds = listOf("file_002"),
+                origin = ItemOrigin.SCENE,
+            ),
+            Item(
+                id = "item_lamp",
+                name = "Lámpara de escritorio",
+                image = "images/cases/case_001/items/item_lamp.png",
+                shortNotes = "Aceite reciente. Ningún residuo de belladona.",
+                description = "Una lámpara de latón sobre la mesa auxiliar junto al sillón. El cristal está limpio y la mecha está recortada.",
+                findings = "El aceite es de uso doméstico. No hay veneno, ni huellas distintas, ni relación con la copa.",
+                relevant = false,
+                origin = ItemOrigin.SCENE,
+            ),
+        ),
+
+        scenes = listOf(
+            CrimeScene(
+                id = "manor_study",
+                name = "Estudio de la mansión",
+                image = SCENE,
+                subscenes = listOf(
+                    SubScene(
+                        id = "escritorio",
+                        name = "Escritorio",
+                        image = "images/cases/case_001/scenes/manor_study/escritorio.png",
+                        bounds = box(24.0, 28.0, 37.0, 36.0),
+                        items = listOf(
+                            spot("item_brandy", 8.0, 43.0, 28.0, 36.0),
+                            spot("item_pillbox", 36.0, 14.0, 24.0, 27.0),
+                            spot("item_telegram", 55.0, 38.0, 43+.0, 40.0),
+                        ),
+                    ),
+                    SubScene(
+                        id = "maletin",
+                        name = "Maletín",
+                        image = "images/cases/case_001/scenes/manor_study/maletin.png",
+                        bounds = box(24.0, 66.0, 22.0, 22.0),
+                        items = listOf(
+                            spot("item_vial", 28.0, 30.0, 36.0, 40.0),
+                        ),
+                    ),
+                    SubScene(
+                        id = "sillon",
+                        name = "Sillón",
+                        image = "images/cases/case_001/scenes/manor_study/sillon.png",
+                        bounds = box(66.0, 8.0, 28.0, 32.0),
+                        items = listOf(
+                            spot("item_lamp", 32.0, 36.0, 34.0, 40.0),
+                        ),
+                    ),
+                ),
             ),
         ),
 

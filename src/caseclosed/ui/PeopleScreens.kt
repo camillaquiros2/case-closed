@@ -232,7 +232,7 @@ fun buildItems(root: Container, nav: Navigator) {
     root.scrollBox(24.0, Desk.HEADER + 12.0, 672.0, Desk.H - Desk.HEADER - 24.0, 0.0, onScroll = {}) {
         var y = 8.0
         if (found.isEmpty()) {
-            y += blockText("The locker is empty. Interviews open drawers.", 8.0, y, 640.0, 18.0, Palette.paper)
+            y += blockText("The locker is empty. The files, the interviews, and the scene fill it.", 8.0, y, 640.0, 18.0, Palette.paper)
         }
         val hidden = case.items.size - found.size
         if (hidden > 0) {

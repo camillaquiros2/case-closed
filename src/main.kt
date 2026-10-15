@@ -1,4 +1,5 @@
 import caseclosed.data.CaseCatalog
+import caseclosed.dev.SceneGuides
 import caseclosed.engine.GameEngine
 import caseclosed.persist.NativeGameSaves
 import caseclosed.ui.AssetBank
@@ -30,6 +31,7 @@ suspend fun main() = Korge(
 class GameScene : Scene() {
     override suspend fun SContainer.sceneMain() {
         CaseCatalog.validate()
+        SceneGuides.writeIfEnabled()
         solidRect(Desk.W, Desk.H, Colors["#140D0A"])
         val assets = AssetBank(resourcesVfs)
         assets.preload(CaseCatalog.imagePaths())

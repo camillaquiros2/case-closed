@@ -1,8 +1,10 @@
 package caseclosed
 
 import caseclosed.data.CaseCatalog
-import caseclosed.model.Verdict
+import caseclosed.dev.SceneGuides
 import caseclosed.engine.evaluateIndictment
+import caseclosed.model.ItemOrigin
+import caseclosed.model.Verdict
 import caseclosed.ui.Vec
 import caseclosed.ui.Yarn
 import kotlin.test.Test
@@ -54,6 +56,32 @@ class LogicTest {
             setOf("item_ledger", "item_key", "hl_202"),
         )
         assertTrue(verdict is Verdict.Solved)
+    }
+
+    @Test
+    fun aNewCaseStartsWithOnlyTheFileEvidence() {
+        val blackwood = CaseCatalog.freshState(CaseCatalog.require("case_001"))
+        assertEquals(listOf("item_brandy", "item_pillbox"), blackwood.discoveredItemIds)
+        val lamp = CaseCatalog.require("case_001").data.items.first { it.id == "item_lamp" }
+        assertEquals(ItemOrigin.SCENE, lamp.origin)
+        assertTrue(!lamp.relevant)
+        val pier = CaseCatalog.freshState(CaseCatalog.require("case_002"))
+        assertEquals(listOf("item_ledger"), pier.discoveredItemIds)
+    }
+
+    @Test
+    fun layoutGuidePaintsTheFirstPartOfTheRoom() {
+        val case = CaseCatalog.require("case_001").data
+        val scene = case.scenes.first()
+        val box = scene.subscenes.first().bounds
+        val bmp = SceneGuides.render(case, scene)
+        val x = SceneGuides.MAP_X + ((box.x + box.w / 2.0) / 100.0 * SceneGuides.MAP_W).toInt()
+        val y = SceneGuides.MAP_Y + ((box.y + box.h / 2.0) / 100.0 * SceneGuides.MAP_H).toInt()
+        val painted = bmp[x, y]
+        val expected = SceneGuides.regionColor(0)
+        assertEquals(expected.r, painted.r)
+        assertEquals(expected.g, painted.g)
+        assertEquals(expected.b, painted.b)
     }
 
     @Test
