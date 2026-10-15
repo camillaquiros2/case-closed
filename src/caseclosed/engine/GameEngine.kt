@@ -228,6 +228,7 @@ class GameEngine(
     ) {
         val id = state.progression.activeCaseId
         val case = activeCase()
+        val itemsBefore = investigation().discoveredItemIds.toSet()
         val availableBefore = case.suspects.flatMap { suspect ->
             suspect.questions
                 .filter { canAskQuestion(suspect.id, it) }
@@ -236,6 +237,16 @@ class GameEngine(
         state = state.withInvestigation(id, block)
         saves.saveCase(id, state.investigation(id))
         val current = investigation()
+        val newItemIds = current.discoveredItemIds.filter {
+            it !in itemsBefore
+        }
+        for (itemId in newItemIds) {
+            val item = case.items.firstOrNull {
+                it.id == itemId
+            } ?: continue
+
+            unlockedQuestionNotices += "Objeto descubierto: ${item.name}"
+        }
         for (suspect in case.suspects) {
             val asked = current.interviews[suspect.id]
                 ?.askedQuestionIds
