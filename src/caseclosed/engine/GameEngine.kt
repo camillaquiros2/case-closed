@@ -3,6 +3,7 @@ package caseclosed.engine
 import caseclosed.data.CaseCatalog
 import caseclosed.model.CaseData
 import caseclosed.model.CaseInvestigationState
+import caseclosed.model.ClueEntry
 import caseclosed.model.GlobalProgression
 import caseclosed.model.Question
 import caseclosed.model.Verdict
@@ -65,6 +66,19 @@ class GameEngine(
     fun isCompleted(caseId: String): Boolean = state.isCompleted(caseId)
 
     fun isStarted(caseId: String = progression.activeCaseId): Boolean = state.isStarted(caseId)
+
+    fun clueLog(): List<ClueEntry> = ClueLog.entries(investigation(), activeCase())
+
+    fun isReferenced(entry: ClueEntry): Boolean = isPinned(entry.kind.boardType, entry.id)
+
+    /**
+     * Sends a logged clue to the evidence board so it can be tied to others.
+     * Only clues already in the log can be referenced. Pinning twice keeps one card.
+     */
+    fun addReference(entry: ClueEntry): String? {
+        if (clueLog().none { it.id == entry.id }) return null
+        return pin(entry.kind.boardType, entry.id, entry.text)
+    }
 
     fun load() {
         var progression = saves.loadProgress() ?: GlobalProgression()

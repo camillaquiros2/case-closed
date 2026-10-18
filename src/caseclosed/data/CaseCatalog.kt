@@ -96,6 +96,12 @@ object CaseCatalog {
                     require(item.relevant) { "${case.id} requires irrelevant item ${item.id}" }
                 }
             }
+            val clues = case.files.flatMap { it.sections }.flatMap { it.highlightableClues.orEmpty() }
+            for (clue in clues) {
+                if (clue.id in case.solution.requiredEvidenceIds) {
+                    require(clue.relevant) { "${case.id} requires irrelevant clue ${clue.id}" }
+                }
+            }
             validateScenes(case, items)
             for (file in case.files) {
                 for (id in file.relatedSuspectIds) require(id in suspects)

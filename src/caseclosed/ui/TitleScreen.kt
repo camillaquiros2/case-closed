@@ -19,8 +19,22 @@ object GameText {
     const val RESUME_CASE = "Resume Case"
     const val MAIN_MENU = "Main Menu"
     const val CASE_OPENED = "Investigation opened"
+    const val CLUE_LOG = "Clue Log"
+    const val CLUE_LOG_EMPTY = "No clues yet. Mark passages in the files, question the suspects, and search the scene."
+    const val CLUE_EVIDENCE = "Evidence"
+    const val CLUE_EXCERPTS = "Document excerpts"
+    const val CLUE_TESTIMONY = "Testimony"
+    const val VIEW_SOURCE = "View Source"
+    const val ADD_TO_BOARD = "Add to Board"
+    const val OPEN_BOARD = "Open Board"
+    const val ON_THE_BOARD = "ON THE BOARD"
+    const val FROM = "From"
+    const val NOTE = "Note"
 
     fun inProgress(logged: Int, pins: Int): String = "In progress  ·  $logged logged  ·  $pins pins"
+    fun clueCount(count: Int): String = "$count clues"
+
+    fun clueSummary(clues: Int, referenced: Int): String = "$clues clues  ·  $referenced on the board"
 }
 
 /**

@@ -54,7 +54,13 @@ data class FileSection(
 
 data class ImageRef(val src: String, val caption: String)
 
-data class ClueDef(val id: String, val text: String, val description: String)
+data class ClueDef(
+    val id: String,
+    val text: String,
+    val description: String,
+    /** False for passages that can be marked but do not bear on the charge. */
+    val relevant: Boolean = true,
+)
 
 data class DocReference(
     val type: String,

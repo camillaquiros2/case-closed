@@ -20,6 +20,7 @@ sealed class Route {
     data object Items : Route()
     data class ItemDetail(val itemId: String) : Route()
     data object Board : Route()
+    data object Clues : Route()
     data object Conclusion : Route()
     data object SceneList : Route()
     data class SceneMap(val sceneId: String) : Route()
@@ -163,6 +164,7 @@ class Navigator(
             is Route.SceneMap -> buildSceneMap(next, this, route.sceneId)
             is Route.SceneCloseup -> buildSceneCloseup(next, this, route.sceneId, route.subSceneId)
             is Route.SceneFind -> buildSceneFind(next, this, route.sceneId, route.subSceneId, route.itemId)
+            Route.Clues -> buildClueLog(next, this)
         }
         showUnlockedQuestionNotice(next)
     }
