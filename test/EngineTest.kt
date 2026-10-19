@@ -111,6 +111,38 @@ class EngineTest {
         reloaded.load()
         assertEquals(engine.clueLog(), reloaded.clueLog())
     }
+
+    @Test
+    fun restartCaseClearsTheInvestigationButKeepsProgression() {
+        val saves = MemoryGameSaves()
+        val engine = GameEngine(saves, now = { 50L })
+        engine.load()
+        engine.startCase()
+        val fresh = CaseCatalog.freshState(CaseCatalog.require("case_001"))
+
+        engine.pin("item", "item_brandy", "The glass")
+        engine.discoverItem("item_telegram")
+        engine.setItemNote("item_brandy", "Huellas de Reid")
+        val clue = assertNotNull(CaseCatalog.findClue(engine.activeCase(), "hl_001"))
+        engine.saveHighlight("hl_001", "document", "file_001", "sec_001", null, clue.text, clue.description)
+
+        engine.restartCase()
+        assertEquals(fresh, engine.investigation())
+        assertTrue(engine.isStarted())
+        assertTrue(engine.clueLog().none { it.id == "hl_001" })
+
+        val reloaded = GameEngine(saves, now = { 50L })
+        reloaded.load()
+        assertEquals(fresh, reloaded.investigation())
+
+        engine.applySuccess()
+        engine.startCase()
+        engine.pin("item", engine.investigation().discoveredItemIds.first(), "First look")
+        engine.restartCase()
+        assertTrue(engine.isCompleted("case_001"))
+        assertEquals("case_002", engine.progression.activeCaseId)
+        assertTrue(engine.investigation().boardNodes.isEmpty())
+    }
 }
 
 private class MemoryGameSaves : GameSaves {

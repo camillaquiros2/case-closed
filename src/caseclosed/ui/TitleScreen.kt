@@ -17,8 +17,12 @@ object GameText {
     const val NEW_CASE = "New investigation"
     const val START_CASE = "Start Case"
     const val RESUME_CASE = "Resume Case"
+    const val RESTART_CASE = "Restart Case"
+    const val RESTART_TITLE = "Restart this case?"
+    const val RESTART_CONFIRM = "Restart"
     const val MAIN_MENU = "Main Menu"
     const val CASE_OPENED = "Investigation opened"
+    const val CASE_RESTARTED = "Investigation restarted"
     const val CLUE_LOG = "Clue Log"
     const val CLUE_LOG_EMPTY = "No clues yet. Mark passages in the files, question the suspects, and search the scene."
     const val CLUE_EVIDENCE = "Evidence"
@@ -32,6 +36,10 @@ object GameText {
     const val NOTE = "Note"
 
     fun inProgress(logged: Int, pins: Int): String = "In progress  ·  $logged logged  ·  $pins pins"
+
+    fun restartWarning(caseNumber: String): String =
+        "This clears the board, notes, highlights, interviews and found evidence for $caseNumber. Solved cases stay solved."
+
     fun clueCount(count: Int): String = "$count clues"
 
     fun clueSummary(clues: Int, referenced: Int): String = "$clues clues  ·  $referenced on the board"
@@ -40,6 +48,7 @@ object GameText {
 /**
  * Main screen. Shows the case that is on the desk and opens it.
  * The engine decides whether the investigation is new or resumed.
+ * A started case can also be restarted from its authored starting state.
  */
 fun buildTitle(root: Container, nav: Navigator) {
     val engine = nav.engine
@@ -57,12 +66,27 @@ fun buildTitle(root: Container, nav: Navigator) {
 
     val cardY = headerH + 40.0
     val cardH = caseCard(root, case, engine.investigation(), started, left, cardY, width)
+    val buttonY = cardY + cardH + 32.0
 
     val label = if (started) GameText.RESUME_CASE else GameText.START_CASE
-    root.actionButton(label, left, cardY + cardH + 32.0, width, 72.0, Palette.wax, Palette.paper) {
+    root.actionButton(label, left, buttonY, width, 72.0, Palette.wax, Palette.paper) {
         if (!started) nav.banner = "${GameText.CASE_OPENED}: ${case.caseNumber}"
         engine.startCase()
         nav.go(Route.Desk)
+    }
+
+    if (started) {
+        root.actionButton(GameText.RESTART_CASE, left, buttonY + 88.0, width, 60.0, Palette.brassDim, Palette.paper) {
+            root.confirmDialog(
+                GameText.RESTART_TITLE,
+                GameText.restartWarning(case.caseNumber),
+                GameText.RESTART_CONFIRM,
+            ) {
+                engine.restartCase()
+                nav.banner = "${GameText.CASE_RESTARTED}: ${case.caseNumber}"
+                nav.go(Route.Desk)
+            }
+        }
     }
 }
 

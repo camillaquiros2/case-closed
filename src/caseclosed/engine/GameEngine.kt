@@ -127,6 +127,25 @@ class GameEngine(
         saves.saveProgress(progression)
     }
 
+    /**
+     * Throws away the active case's investigation and lays out the authored starting state again.
+     * Solved and unlocked cases stay as they are.
+     */
+    fun restartCase() {
+        val caseId = state.progression.activeCaseId
+        val fresh = CaseCatalog.freshState(CaseCatalog.require(caseId))
+        val progression = state.progression.copy(
+            startedCaseIds = (state.progression.startedCaseIds + caseId).distinct(),
+        )
+        state = state.copy(
+            progression = progression,
+            investigations = state.investigations + (caseId to fresh),
+        )
+        unlockedQuestionNotices.clear()
+        saves.saveCase(caseId, fresh)
+        saves.saveProgress(progression)
+    }
+
     fun markMessagesRead() {
         val ids = activeCase().phoneMessages.map { it.id }
         edit { InvestigationRules.markMessagesRead(it, ids) }
