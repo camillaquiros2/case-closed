@@ -10,39 +10,39 @@ import korlibs.korge.view.text
 
 /** Labels that are not case content. Change them here, not inside the screens. */
 object GameText {
-    const val TITLE = "Desk Detective"
-    const val TAGLINE = "Cold Case Files"
+    const val TITLE = "Detective de mesa"
+    const val TAGLINE = "Casos fríos"
     const val WINDOW_TITLE = TITLE + ": " + TAGLINE
-    const val ON_THE_DESK = "ON THE DESK"
-    const val NEW_CASE = "New investigation"
-    const val START_CASE = "Start Case"
-    const val RESUME_CASE = "Resume Case"
-    const val RESTART_CASE = "Restart Case"
-    const val RESTART_TITLE = "Restart this case?"
-    const val RESTART_CONFIRM = "Restart"
-    const val MAIN_MENU = "Main Menu"
-    const val CASE_OPENED = "Investigation opened"
-    const val CASE_RESTARTED = "Investigation restarted"
-    const val CLUE_LOG = "Clue Log"
-    const val CLUE_LOG_EMPTY = "No clues yet. Mark passages in the files, question the suspects, and search the scene."
-    const val CLUE_EVIDENCE = "Evidence"
-    const val CLUE_EXCERPTS = "Document excerpts"
-    const val CLUE_TESTIMONY = "Testimony"
-    const val VIEW_SOURCE = "View Source"
-    const val ADD_TO_BOARD = "Add to Board"
-    const val OPEN_BOARD = "Open Board"
-    const val ON_THE_BOARD = "ON THE BOARD"
-    const val FROM = "From"
-    const val NOTE = "Note"
+    const val ON_THE_DESK = "EN EL ESCRITORIO"
+    const val NEW_CASE = "Investigación nueva"
+    const val START_CASE = "Empezar caso"
+    const val RESUME_CASE = "Reanudar caso"
+    const val RESTART_CASE = "Reiniciar caso"
+    const val RESTART_TITLE = "¿Reiniciar este caso?"
+    const val RESTART_CONFIRM = "Reiniciar"
+    const val MAIN_MENU = "Menú principal"
+    const val CASE_OPENED = "Investigación abierta"
+    const val CASE_RESTARTED = "Investigación reiniciada"
+    const val CLUE_LOG = "Bitácora"
+    const val CLUE_LOG_EMPTY = "Aún no hay pistas. Marca pasajes en los expedientes, interroga a los sospechosos y registra la escena."
+    const val CLUE_EVIDENCE = "Pruebas"
+    const val CLUE_EXCERPTS = "Extractos"
+    const val CLUE_TESTIMONY = "Testimonio"
+    const val VIEW_SOURCE = "Ver origen"
+    const val ADD_TO_BOARD = "Al tablero"
+    const val OPEN_BOARD = "Abrir tablero"
+    const val ON_THE_BOARD = "EN EL TABLERO"
+    const val FROM = "De"
+    const val NOTE = "Nota"
 
-    fun inProgress(logged: Int, pins: Int): String = "In progress  ·  $logged logged  ·  $pins pins"
+    fun inProgress(logged: Int, pins: Int): String = "En curso  ·  $logged registradas  ·  $pins fichas"
 
     fun restartWarning(caseNumber: String): String =
-        "This clears the board, notes, highlights, interviews and found evidence for $caseNumber. Solved cases stay solved."
+        "Esto borra el tablero, las notas, las marcas, las entrevistas y las pruebas halladas de $caseNumber. Los casos resueltos siguen resueltos."
 
-    fun clueCount(count: Int): String = "$count clues"
+    fun clueCount(count: Int): String = "$count pistas"
 
-    fun clueSummary(clues: Int, referenced: Int): String = "$clues clues  ·  $referenced on the board"
+    fun clueSummary(clues: Int, referenced: Int): String = "$clues pistas  ·  $referenced en el tablero"
 }
 
 /**

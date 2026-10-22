@@ -38,7 +38,7 @@ fun buildBoard(root: Container, nav: Navigator) {
     val engine = nav.engine
     val case = engine.activeCase()
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
-    root.chrome("Evidence Board", case.title, nav, true)
+    root.chrome("Tablero", case.title, nav, true)
 
     var filter = "all"
     var page = 0
@@ -61,22 +61,26 @@ fun buildBoard(root: Container, nav: Navigator) {
             val other = state.boardNodes.find { it.id == otherId } ?: return@mapNotNull null
             clipText(displayTitle(case, state, other), 14)
         }
-        return if (names.isEmpty()) "Not tied." else "Tied to ${names.joinToString(", ")}."
+        return if (names.isEmpty()) "Sin atar." else "Atada a ${names.joinToString(", ")}."
     }
 
     fun statusText(): String {
         val state = engine.investigation()
         val count = state.boardConnections.size
-        val links = if (count == 0) "No strings yet." else "$count red string${if (count == 1) "" else "s"}."
+        val links = when (count) {
+            0 -> "Aún no hay hilos."
+            1 -> "1 hilo rojo."
+            else -> "$count hilos rojos."
+        }
         val node = nodeById(selected)
         return if (node != null) {
             val title = clipText(displayTitle(case, state, node), 18)
-            val hint = if (linkMode) "Tap another card to tie or untie." else "Tap again to read it."
+            val hint = if (linkMode) "Toca otra ficha para atar o soltar." else "Toca de nuevo para leerla."
             clipText("$title. ${tiedTo(node.id)} $hint", 92)
         } else if (linkMode) {
-            "Linking: tap two cards. Drag is off. $links"
+            "Enlazando: toca dos fichas. Sin arrastre. $links"
         } else {
-            "Drag a card to move it. Tap a card to read it. $links"
+            "Arrastra una ficha para moverla. Tócala para leerla. $links"
         }
     }
 
@@ -87,12 +91,12 @@ fun buildBoard(root: Container, nav: Navigator) {
     val toolsY = Desk.HEADER + 28.0
     val linkBtn = root.container { position(16.0, toolsY) }
     val linkFill = linkBtn.solidRect(166.0, 46.0, Palette.wax)
-    val linkLabel = linkBtn.text("Link", textSize = 18.0, color = Palette.paper) { position(14.0, 12.0) }
+    val linkLabel = linkBtn.text("Enlazar", textSize = 18.0, color = Palette.paper) { position(14.0, 12.0) }
     linkBtn.hitRect(166.0, 46.0) {
         linkMode = !linkMode
         linkFill.color = if (linkMode) Palette.gold else Palette.wax
         linkLabel.color = if (linkMode) Palette.ink else Palette.paper
-        linkLabel.text = if (linkMode) "Linking" else "Link"
+        linkLabel.text = if (linkMode) "Enlazando" else "Enlazar"
         drawBoard()
     }
 
@@ -102,25 +106,25 @@ fun buildBoard(root: Container, nav: Navigator) {
         return node
     }
 
-    root.actionButton("Remove", 190.0, toolsY, 166.0, 46.0, Palette.wax, Palette.paper) {
-        val node = requireSelected("Tap a card on the board, then Remove.") ?: return@actionButton
+    root.actionButton("Quitar", 190.0, toolsY, 166.0, 46.0, Palette.wax, Palette.paper) {
+        val node = requireSelected("Toca una ficha del tablero y luego Quitar.") ?: return@actionButton
         engine.removeNode(node.id)
         selected = null
         drawBoard()
         drawTray()
     }
-    root.actionButton("Cut", 364.0, toolsY, 166.0, 46.0, Palette.brassDim, Palette.paper) {
-        val node = requireSelected("Tap a card, then Cut to clear its strings.") ?: return@actionButton
+    root.actionButton("Cortar", 364.0, toolsY, 166.0, 46.0, Palette.brassDim, Palette.paper) {
+        val node = requireSelected("Toca una ficha y luego Cortar para soltar sus hilos.") ?: return@actionButton
         val doomed = engine.investigation().boardConnections.filter { it.fromNodeId == node.id || it.toNodeId == node.id }
         if (doomed.isEmpty()) {
-            status.text = "That card has no strings."
+            status.text = "Esa ficha no tiene hilos."
             return@actionButton
         }
         doomed.forEach { engine.removeConnection(it.id) }
         drawBoard()
     }
-    root.actionButton("Open", 538.0, toolsY, 166.0, 46.0, Palette.greenFelt, Palette.paper) {
-        val node = requireSelected("Tap a card, then Open.") ?: return@actionButton
+    root.actionButton("Abrir", 538.0, toolsY, 166.0, 46.0, Palette.greenFelt, Palette.paper) {
+        val node = requireSelected("Toca una ficha y luego Abrir.") ?: return@actionButton
         openInspector(root, nav, case, node) {
             if (nodeById(selected) == null) selected = null
             drawBoard()
@@ -208,7 +212,7 @@ fun buildBoard(root: Container, nav: Navigator) {
 
     fun paintTabs() {
         tabLayer.clearChildren()
-        val tabs = listOf("all" to "All", "suspect" to "Suspects", "item" to "Items", "highlight" to "Quotes")
+        val tabs = listOf("all" to "Todos", "suspect" to "Sospechosos", "item" to "Objetos", "highlight" to "Citas")
         tabs.forEachIndexed { index, (id, label) ->
             val x = 16.0 + index * 176.0
             tabLayer.actionButton(
@@ -307,18 +311,18 @@ fun buildBoard(root: Container, nav: Navigator) {
         val pages = ((list.size + PAGE_SIZE - 1) / PAGE_SIZE).coerceAtLeast(1)
         if (page > pages - 1) page = pages - 1
         val title = when (filter) {
-            "suspect" -> "Suspects"
-            "item" -> "Items"
-            "highlight" -> "Quotes"
-            else -> "All evidence"
+            "suspect" -> "Sospechosos"
+            "item" -> "Objetos"
+            "highlight" -> "Citas"
+            else -> "Todas las pruebas"
         }
         tray.text("$title  ·  ${list.size}", textSize = 14.0, color = Palette.brass) { position(12.0, 6.0) }
         if (list.isEmpty()) {
             val empty = when (filter) {
-                "item" -> "No items in the locker yet."
-                "highlight" -> "No quotes yet. Highlight a sentence to save one."
-                "suspect" -> "No suspects in this case."
-                else -> "Nothing to pin yet."
+                "item" -> "Aún no hay objetos en el casillero."
+                "highlight" -> "Aún no hay citas. Marca una frase para guardar una."
+                "suspect" -> "No hay sospechosos en este caso."
+                else -> "Nada que fijar todavía."
             }
             tray.text(empty, textSize = 16.0, color = Palette.paper) { position(12.0, 40.0) }
             return@tray
@@ -336,7 +340,7 @@ fun buildBoard(root: Container, nav: Navigator) {
             card.text(typeLabel(chip.type), textSize = 12.0, color = Palette.paper) { position(104.0, 12.0) }
             card.text(clipText(chip.title, 32), textSize = 16.0, color = Palette.ink) { position(96.0, 34.0) }
             card.text(
-                if (pinned) "On the board · tap to remove" else "Tap to pin to the board",
+                if (pinned) "En el tablero · toca para quitar" else "Toca para fijar al tablero",
                 textSize = 13.0,
                 color = if (pinned) Palette.wax else Palette.inkSoft,
             ) { position(96.0, 58.0) }
@@ -355,14 +359,14 @@ fun buildBoard(root: Container, nav: Navigator) {
         }
         if (pages > 1) {
             val pagerY = 30.0 + PAGE_SIZE * 122.0
-            tray.actionButton("Prev", 8.0, pagerY, 150.0, 44.0, Palette.brassDim, Palette.paper) {
+            tray.actionButton("Anterior", 8.0, pagerY, 150.0, 44.0, Palette.brassDim, Palette.paper) {
                 if (page > 0) {
                     page -= 1
                     drawTray()
                 }
             }
             tray.text("${page + 1} / $pages", textSize = 16.0, color = Palette.paper) { position(290.0, pagerY + 12.0) }
-            tray.actionButton("Next", 498.0, pagerY, 150.0, 44.0, Palette.brassDim, Palette.paper) {
+            tray.actionButton("Siguiente", 498.0, pagerY, 150.0, 44.0, Palette.brassDim, Palette.paper) {
                 if (page < pages - 1) {
                     page += 1
                     drawTray()
@@ -399,7 +403,11 @@ private fun placeCard(
     photo.photo(nav.assets.get(image), 36.0, 52.0, typeLabel(node.type), typeTint(node.type))
     card.text(typeLabel(node.type), textSize = 11.0, color = typeTint(node.type)) { position(54.0, 8.0) }
     card.text(clipText(displayTitle(case, state, node), 14), textSize = 13.0, color = Palette.ink) { position(54.0, 24.0) }
-    val footer = if (linkCount > 0) "$linkCount string${if (linkCount == 1) "" else "s"}" else "Tap to read"
+    val footer = when (linkCount) {
+        0 -> "Toca y lee"
+        1 -> "1 hilo"
+        else -> "$linkCount hilos"
+    }
     card.text(footer, textSize = 11.0, color = if (linkCount > 0) Palette.wax else Palette.inkSoft) {
         position(54.0, 46.0)
     }
@@ -439,9 +447,9 @@ private fun Container.yarnRope(points: List<Vec>) {
 }
 
 private fun typeLabel(type: String): String = when (type) {
-    "suspect" -> "Suspect"
-    "item" -> "Item"
-    else -> "Quote"
+    "suspect" -> "Sospechoso"
+    "item" -> "Objeto"
+    else -> "Cita"
 }
 
 private fun typeTint(type: String): RGBAFill = when (type) {
@@ -467,11 +475,11 @@ private fun entityImage(case: CaseData, state: CaseInvestigationState, type: Str
 }
 
 private fun displayTitle(case: CaseData, state: CaseInvestigationState, node: BoardNode): String = when (node.type) {
-    "suspect" -> case.suspects.find { it.id == node.entityId }?.name ?: "Suspect"
-    "item" -> case.items.find { it.id == node.entityId }?.name ?: "Item"
+    "suspect" -> case.suspects.find { it.id == node.entityId }?.name ?: "Sospechoso"
+    "item" -> case.items.find { it.id == node.entityId }?.name ?: "Objeto"
     else -> {
         val text = node.selectedExcerpt ?: state.highlights.find { it.id == node.entityId }?.text.orEmpty()
-        clipText(text.ifBlank { "Quote" }, 28)
+        clipText(text.ifBlank { "Cita" }, 28)
     }
 }
 
@@ -489,39 +497,39 @@ private fun excerptChoices(case: CaseData, nav: Navigator, node: BoardNode): Lis
         "suspect" -> {
             val suspect = case.suspects.find { it.id == node.entityId } ?: return emptyList()
             buildList {
-                add(ExcerptChoice("Official bio", suspect.shortDescription))
-                add(ExcerptChoice("Alibi", suspect.alibi))
+                add(ExcerptChoice("Ficha oficial", suspect.shortDescription))
+                add(ExcerptChoice("Coartada", suspect.alibi))
                 val note = state.suspectNotes[suspect.id]
-                if (!note.isNullOrBlank()) add(ExcerptChoice("Detective note", note))
+                if (!note.isNullOrBlank()) add(ExcerptChoice("Nota del detective", note))
                 state.highlights
                     .filter { it.sourceType == "interview" && it.sourceId == suspect.id }
-                    .forEach { add(ExcerptChoice("Testimony", it.text)) }
+                    .forEach { add(ExcerptChoice("Testimonio", it.text)) }
             }
         }
         "item" -> {
             val item = case.items.find { it.id == node.entityId } ?: return emptyList()
             buildList {
-                add(ExcerptChoice("Short notes", item.shortNotes))
-                add(ExcerptChoice("Findings", item.findings))
+                add(ExcerptChoice("Notas breves", item.shortNotes))
+                add(ExcerptChoice("Hallazgos", item.findings))
                 val note = state.itemNotes[item.id]
-                if (!note.isNullOrBlank()) add(ExcerptChoice("Detective note", note))
+                if (!note.isNullOrBlank()) add(ExcerptChoice("Nota del detective", note))
             }
         }
         else -> {
             val quote = state.highlights.find { it.id == node.entityId }?.text ?: return emptyList()
-            listOf(ExcerptChoice("Quote", quote))
+            listOf(ExcerptChoice("Cita", quote))
         }
     }
 }
 
 private fun previewNotes(state: CaseInvestigationState, node: BoardNode): List<Pair<String, String>> = buildList {
     val board = node.note?.trim().orEmpty()
-    if (board.isNotEmpty()) add("Board note" to board)
+    if (board.isNotEmpty()) add("Nota del tablero" to board)
     when (node.type) {
-        "suspect" -> state.suspectNotes[node.entityId]?.trim()?.takeIf { it.isNotEmpty() }?.let { add("Dossier note" to it) }
-        "item" -> state.itemNotes[node.entityId]?.trim()?.takeIf { it.isNotEmpty() }?.let { add("Evidence note" to it) }
+        "suspect" -> state.suspectNotes[node.entityId]?.trim()?.takeIf { it.isNotEmpty() }?.let { add("Nota del expediente" to it) }
+        "item" -> state.itemNotes[node.entityId]?.trim()?.takeIf { it.isNotEmpty() }?.let { add("Nota de la prueba" to it) }
         else -> state.highlights.find { it.id == node.entityId }?.note?.trim()?.takeIf { it.isNotEmpty() }?.let {
-            add("Excerpt note" to it)
+            add("Nota del extracto" to it)
         }
     }
 }
@@ -544,16 +552,16 @@ private fun openPreview(host: Container, nav: Navigator, case: CaseData, node: B
             position(112.0, 40.0)
         }
         var y = 140.0
-        text("Text", textSize = 16.0, color = Palette.brassDim) { position(0.0, y) }
+        text("Texto", textSize = 16.0, color = Palette.brassDim) { position(0.0, y) }
         y += 24.0
-        val shown = if (excerpt.isBlank()) "No text on this card." else clipText(excerpt, 420)
+        val shown = if (excerpt.isBlank()) "Esta ficha no tiene texto." else clipText(excerpt, 420)
         y += blockText(shown, 0.0, y, 580.0, 16.0, Palette.ink)
         y += 18.0
-        text("Notes", textSize = 16.0, color = Palette.brassDim) { position(0.0, y) }
+        text("Notas", textSize = 16.0, color = Palette.brassDim) { position(0.0, y) }
         y += 24.0
         val notes = previewNotes(state, node)
         if (notes.isEmpty()) {
-            blockText("No notes yet.", 0.0, y, 580.0, 16.0, Palette.inkSoft)
+            blockText("Sin notas.", 0.0, y, 580.0, 16.0, Palette.inkSoft)
         } else {
             for ((label, body) in notes) {
                 text(label, textSize = 14.0, color = Palette.brassDim) { position(0.0, y) }
@@ -562,7 +570,7 @@ private fun openPreview(host: Container, nav: Navigator, case: CaseData, node: B
                 y += 12.0
             }
         }
-        actionButton("Close", 0.0, 700.0, 180.0, 48.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton("Cerrar", 0.0, 700.0, 180.0, 48.0, Palette.brassDim, Palette.paper) { dismiss() }
     }
 }
 
@@ -589,7 +597,7 @@ private fun openInspector(
         text(clipText(displayTitle(case, state, node), 28), textSize = 24.0, color = Palette.ink) {
             position(100.0, 32.0)
         }
-        text("Choose the line printed on this card", textSize = 14.0, color = Palette.inkSoft) {
+        text("Elige la línea que se imprime en esta ficha", textSize = 14.0, color = Palette.inkSoft) {
             position(100.0, 68.0)
         }
         var y = 116.0
@@ -612,18 +620,18 @@ private fun openInspector(
         }
         val note = node.note.orEmpty()
         blockText(
-            if (note.isBlank()) "No hypothesis on this pin." else "Hypothesis: $note",
+            if (note.isBlank()) "Esta ficha no tiene hipótesis." else "Hipótesis: $note",
             0.0, y, 580.0, 15.0, Palette.ink,
         )
         y += 48.0
-        actionButton("Hypothesis", 0.0, y, 190.0, 48.0, Palette.brass, Palette.ink) {
-            host.noteEditor("Pin hypothesis", "Stored on this pin only.", note, allowPin = false) { written, _ ->
+        actionButton("Hipótesis", 0.0, y, 190.0, 48.0, Palette.brass, Palette.ink) {
+            host.noteEditor("Hipótesis de la ficha", "Solo se guarda en esta ficha.", note, allowPin = false) { written, _ ->
                 engine.setNodeNote(node.id, written)
                 dismiss()
                 onChanged()
             }
         }
-        actionButton("Open source", 210.0, y, 200.0, 48.0, Palette.greenFelt, Palette.paper) {
+        actionButton("Abrir origen", 210.0, y, 200.0, 48.0, Palette.greenFelt, Palette.paper) {
             dismiss()
             when (node.type) {
                 "suspect" -> nav.push(Route.Interview(node.entityId))
@@ -637,7 +645,7 @@ private fun openInspector(
                 }
             }
         }
-        actionButton("Remove", 430.0, y, 160.0, 48.0, Palette.wax, Palette.paper) {
+        actionButton("Quitar", 430.0, y, 160.0, 48.0, Palette.wax, Palette.paper) {
             engine.removeNode(node.id)
             dismiss()
             onChanged()

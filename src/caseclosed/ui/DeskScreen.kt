@@ -20,9 +20,9 @@ fun buildDesk(root: Container, nav: Navigator) {
     root.text(clipText(case.title, 32), textSize = 28.0, color = Palette.paper) { position(28.0, 40.0) }
     root.text("${case.location}  ·  ${case.date}", textSize = 15.0, color = Palette.paperShade) { position(28.0, 82.0) }
     if (engine.isCompleted(case.id)) {
-        root.text("CLOSED", textSize = 16.0, color = Palette.gold) { position(28.0, 104.0) }
+        root.text("CERRADO", textSize = 16.0, color = Palette.gold) { position(28.0, 104.0) }
     }
-    root.actionButton("Cases", Desk.W - 160.0, 36.0, 128.0, 52.0, Palette.brass, Palette.ink) {
+    root.actionButton("Casos", Desk.W - 160.0, 36.0, 128.0, 52.0, Palette.brass, Palette.ink) {
         openCaseDrawer(root, nav)
     }
 
@@ -37,7 +37,7 @@ fun buildDesk(root: Container, nav: Navigator) {
     val cardW = 208.0
     val gap = 16.0
     val left = 32.0
-    deskCard(root, left, top, cardW, 188.0, Palette.phone, "Telephone", phoneLabel(engine), nav.assets, null) {
+    deskCard(root, left, top, cardW, 188.0, Palette.phone, "Teléfono", phoneLabel(engine), nav.assets, null) {
         nav.push(Route.Phone)
     }
     if (engine.unreadCount() > 0) {
@@ -47,31 +47,31 @@ fun buildDesk(root: Container, nav: Navigator) {
         }
     }
     deskCard(
-        root, left + cardW + gap, top, cardW, 188.0, Palette.manila, "Case Files",
-        "${case.files.size} documents", nav.assets, null,
+        root, left + cardW + gap, top, cardW, 188.0, Palette.manila, "Expedientes",
+        "${case.files.size} documentos", nav.assets, null,
     ) { nav.push(Route.Files) }
     deskCard(
-        root, left + (cardW + gap) * 2, top, cardW, 188.0, Palette.dossier, "Suspects",
-        "${case.suspects.size} persons", nav.assets, null,
+        root, left + (cardW + gap) * 2, top, cardW, 188.0, Palette.dossier, "Sospechosos",
+        "${case.suspects.size} personas", nav.assets, null,
     ) { nav.push(Route.Suspects) }
 
     val mid = top + 208.0
     deskCard(
-        root, left, mid, cardW, 220.0, Palette.locker, "Evidence Locker",
-        "${state.discoveredItemIds.size} logged", nav.assets, null,
+        root, left, mid, cardW, 220.0, Palette.locker, "Casillero",
+        "${state.discoveredItemIds.size} fichas", nav.assets, null,
     ) { nav.push(Route.Items) }
     deskCard(
         root, left + cardW + gap, mid, cardW, 220.0, Palette.greenFelt, GameText.CLUE_LOG,
         GameText.clueCount(engine.clueLog().size), nav.assets, null,
     ) { nav.push(Route.Clues) }
     deskCard(
-        root, left + (cardW + gap) * 2, mid, cardW, 220.0, Palette.cork, "Evidence Board",
-        "${state.boardNodes.size} pins  ·  ${state.boardConnections.size} strings",
+        root, left + (cardW + gap) * 2, mid, cardW, 220.0, Palette.cork, "Tablero",
+        "${state.boardNodes.size} fichas  ·  ${state.boardConnections.size} hilos",
         nav.assets, "images/desk/cork_texture.png",
     ) { nav.push(Route.Board) }
 
     val docketY = mid + 244.0
-    deskCard(root, left, docketY, 656.0, 150.0, Palette.wax, "Indictment Docket", "Name a suspect and file the charge", nav.assets, null) {
+    deskCard(root, left, docketY, 656.0, 150.0, Palette.wax, "Acusación", "Nombra a un sospechoso y presenta el cargo", nav.assets, null) {
         nav.push(Route.Conclusion)
     }
 
@@ -81,7 +81,7 @@ fun buildDesk(root: Container, nav: Navigator) {
     }
     if (case.scenes.isNotEmpty()) {
         root.actionButton(
-            "Visit the Scene",
+            "Visitar la escena",
             32.0,
             Desk.H - 96.0,
             656.0,
@@ -98,7 +98,7 @@ fun buildDesk(root: Container, nav: Navigator) {
 
 private fun phoneLabel(engine: caseclosed.engine.GameEngine): String {
     val unread = engine.unreadCount()
-    return if (unread == 0) "No new calls" else "$unread unread"
+    return if (unread == 0) "Sin llamadas" else "$unread sin leer"
 }
 
 private fun deskCard(
@@ -136,13 +136,13 @@ private fun deskCard(
 
 private fun openCaseDrawer(root: Container, nav: Navigator) {
     root.overlay(660.0, 720.0, dismissOnScrim = true) { dismiss ->
-        text("Case Drawer", textSize = 28.0, color = Palette.ink) { position(0.0, 0.0) }
-        text("Unlocked files", textSize = 16.0, color = Palette.inkSoft) { position(0.0, 40.0) }
+        text("Archivo de casos", textSize = 28.0, color = Palette.ink) { position(0.0, 0.0) }
+        text("Expedientes abiertos", textSize = 16.0, color = Palette.inkSoft) { position(0.0, 40.0) }
         var y = 80.0
         val unlocked = nav.engine.progression.unlockedCaseIds
         if (unlocked.size < 2) {
             blockText(
-                "The next file is still in the chief's cabinet.",
+                "El siguiente expediente sigue en el armario del jefe.",
                 0.0, y, 580.0, 18.0, Palette.ink,
             )
             y += 80.0
@@ -156,8 +156,8 @@ private fun openCaseDrawer(root: Container, nav: Navigator) {
                 append(data.caseNumber)
                 append("  ")
                 append(data.title)
-                if (active) append("   ·  ON THE DESK")
-                if (closed) append("   ·  CLOSED")
+                if (active) append("   ·  EN EL ESCRITORIO")
+                if (closed) append("   ·  CERRADO")
             }
             solidRect(590.0, 88.0, if (active) Palette.highlight else Palette.paperShade) { position(0.0, y) }
             text(clipText(label, 52), textSize = 16.0, color = Palette.ink) { position(14.0, y + 16.0) }
@@ -174,7 +174,7 @@ private fun openCaseDrawer(root: Container, nav: Navigator) {
             }
             y += 100.0
         }
-        actionButton("Close", 0.0, 560.0, 180.0, 52.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton("Cerrar", 0.0, 560.0, 180.0, 52.0, Palette.brassDim, Palette.paper) { dismiss() }
         actionButton(GameText.MAIN_MENU, 200.0, 560.0, 200.0, 52.0, Palette.wax, Palette.paper) {
             dismiss()
             nav.go(Route.Title)

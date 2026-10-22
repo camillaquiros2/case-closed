@@ -20,7 +20,7 @@ fun buildConclusion(root: Container, nav: Navigator) {
     val case = engine.activeCase()
     val nodes = engine.investigation().boardNodes
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
-    root.chrome("Indictment", case.title, nav, true)
+    root.chrome("Acusación", case.title, nav, true)
 
     val accused = arrayOfNulls<String>(1)
     val picked = linkedSetOf<String>()
@@ -29,7 +29,7 @@ fun buildConclusion(root: Container, nav: Navigator) {
 
     root.scrollBox(16.0, Desk.HEADER + 8.0, 688.0, Desk.H - Desk.HEADER - 150.0, 0.0, onScroll = {}) {
         var y = 8.0
-        text("Step 1  ·  Name the accused", textSize = 22.0, color = Palette.paper) { position(8.0, y) }
+        text("Paso 1 · Nombra al acusado", textSize = 22.0, color = Palette.paper) { position(8.0, y) }
         y += 40.0
         for (suspect in case.suspects) {
             val row = y
@@ -53,23 +53,23 @@ fun buildConclusion(root: Container, nav: Navigator) {
             y += 84.0
         }
         y += 8.0
-        text("Step 2  ·  Supporting evidence from the board", textSize = 22.0, color = Palette.paper) { position(8.0, y) }
+        text("Paso 2 · Pruebas del tablero", textSize = 22.0, color = Palette.paper) { position(8.0, y) }
         y += 36.0
         text(
-            "Only pins already on the cork can be filed. The chief wants at least ${case.solution.minEvidenceCount}.",
+            "Solo se archivan las fichas que ya están en el corcho. El jefe pide al menos ${case.solution.minEvidenceCount}.",
             textSize = 15.0,
             color = Palette.brass,
         ) { position(8.0, y) }
         y += 48.0
         if (nodes.isEmpty()) {
-            y += blockText("The board is bare. Pin your proof before you file.", 8.0, y, 640.0, 18.0, Palette.paper)
+            y += blockText("El tablero está vacío. Fija tus pruebas antes de archivar.", 8.0, y, 640.0, 18.0, Palette.paper)
         }
         for (node in nodes) {
             val row = y
             val title = when (node.type) {
-                "suspect" -> case.suspects.find { it.id == node.entityId }?.name ?: "Suspect"
-                "item" -> case.items.find { it.id == node.entityId }?.name ?: "Item"
-                else -> "Quote"
+                "suspect" -> case.suspects.find { it.id == node.entityId }?.name ?: "Sospechoso"
+                "item" -> case.items.find { it.id == node.entityId }?.name ?: "Objeto"
+                else -> "Cita"
             }
             val excerpt = node.selectedExcerpt ?: ""
             solidRect(660.0, 78.0, Palette.paper) { position(8.0, row) }
@@ -94,21 +94,21 @@ fun buildConclusion(root: Container, nav: Navigator) {
         y + 20.0
     }
 
-    root.actionButton("Submit Indictment", 24.0, Desk.H - 110.0, 672.0, 72.0, Palette.wax, Palette.paper) {
+    root.actionButton("Presentar acusación", 24.0, Desk.H - 110.0, 672.0, 72.0, Palette.wax, Palette.paper) {
         val suspectId = accused[0]
         if (suspectId == null) {
             root.confirmDialog(
-                "No name on the docket",
-                "Choose the person you are accusing before you send this upstairs.",
-                "Back",
+                "Sin nombre en el expediente",
+                "Elige a la persona que acusas antes de enviar esto arriba.",
+                "Volver",
             ) {}
             return@actionButton
         }
         val name = case.suspects.first { it.id == suspectId }.name
         root.confirmDialog(
-            "Are you sure?",
-            "File this indictment against $name? A wrong name comes back on your record. The board stays as you left it if the chief refuses.",
-            "Submit",
+            "¿Estás seguro?",
+            "¿Archivar esta acusación contra $name? Un nombre equivocado queda en tu expediente. Si el jefe la rechaza, el tablero se queda como está.",
+            "Presentar",
         ) {
             val verdict = engine.evaluate(suspectId, picked)
             presentVerdict(root, nav, verdict)
@@ -121,15 +121,15 @@ private fun presentVerdict(root: Container, nav: Navigator, verdict: Verdict) {
     val nextId = if (solved) nav.engine.applySuccess() else null
     if (solved && nextId != null) {
         val title = CaseCatalog.require(nextId).data.title
-        nav.banner = "$title is now on the desk."
+        nav.banner = "$title ya está en el escritorio."
     } else if (solved) {
-        nav.banner = "The cabinet is clear."
+        nav.banner = "El armario está despejado."
     }
     val message = when (verdict) {
         is Verdict.Solved -> verdict.explanation
         is Verdict.Rejected -> verdict.critique
     }
-    val heading = if (solved) "Case Closed" else "Docket Returned"
+    val heading = if (solved) "Caso cerrado" else "Expediente devuelto"
     root.overlay(660.0, if (solved) 760.0 else 560.0, dismissOnScrim = false) { dismiss ->
         text(heading, textSize = 32.0, color = Palette.ink) { position(0.0, 0.0) }
         if (solved) {
@@ -145,14 +145,14 @@ private fun presentVerdict(root: Container, nav: Navigator, verdict: Verdict) {
                 anchor(0.5, 0.5)
                 rotation = 45.degrees
             }
-            seal.text("CLOSED", textSize = 22.0, color = Palette.wax) { position(-46.0, -14.0) }
+            seal.text("CERRADO", textSize = 18.0, color = Palette.wax) { position(-52.0, -12.0) }
             seal.rotation = (-8).degrees
         }
         val bodyY = if (solved) 340.0 else 70.0
         blockText(message, 0.0, bodyY, 590.0, 18.0, Palette.ink)
         val buttonY = if (solved) 560.0 else 360.0
         actionButton(
-            if (solved) "Back to the desk" else "Continue investigation",
+            if (solved) "Volver al escritorio" else "Seguir investigando",
             0.0,
             buttonY,
             420.0,

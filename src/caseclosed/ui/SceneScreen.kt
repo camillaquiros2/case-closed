@@ -27,17 +27,17 @@ private val mapFrame = MapFrame(24.0, Desk.HEADER + 48.0, 672.0, 520.0)
 fun buildSceneList(root: Container, nav: Navigator) {
     val case = nav.engine.activeCase()
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
-    root.chrome("The Scene", case.title, nav, true)
+    root.chrome("La escena", case.title, nav, true)
     root.scrollBox(24.0, Desk.HEADER + 16.0, 672.0, Desk.H - Desk.HEADER - 32.0, 0.0, onScroll = {}) {
         var y = 8.0
-        y += blockText("Choose a place to search.", 8.0, y, 640.0, 18.0, Palette.paper)
+        y += blockText("Elige un lugar para registrar.", 8.0, y, 640.0, 18.0, Palette.paper)
         y += 16.0
         for (scene in case.scenes) {
             val rowY = y
             solidRect(650.0, 96.0, Palette.brass) { position(0.0, rowY) }
             solidRect(642.0, 88.0, Palette.paper) { position(4.0, rowY + 4.0) }
             text(scene.name, textSize = 24.0, color = Palette.ink) { position(20.0, rowY + 18.0) }
-            text("${scene.subscenes.size} parts", textSize = 16.0, color = Palette.inkSoft) { position(20.0, rowY + 54.0) }
+            text("${scene.subscenes.size} partes", textSize = 16.0, color = Palette.inkSoft) { position(20.0, rowY + 54.0) }
             solidRect(650.0, 96.0, Colors.WHITE) {
                 position(0.0, rowY)
                 alpha = 0.01
@@ -54,13 +54,13 @@ fun buildSceneMap(root: Container, nav: Navigator, sceneId: String) {
     val scene = case.scenes.firstOrNull { it.id == sceneId }
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
     if (scene == null) {
-        root.chrome("The Scene", case.title, nav, true)
-        root.text("That place is not on this case.", textSize = 18.0, color = Palette.paper) {
+        root.chrome("La escena", case.title, nav, true)
+        root.text("Ese lugar no está en este caso.", textSize = 18.0, color = Palette.paper) {
             position(28.0, Desk.HEADER + 24.0)
         }
         return
     }
-    root.chrome(clipText(scene.name, 22), "Tap a part of the room", nav, true)
+    root.chrome(clipText(scene.name, 22), "Toca una parte de la sala", nav, true)
     root.drawPlate(nav, scene.image, mapFrame)
     scene.subscenes.forEachIndexed { index, sub ->
         root.hotspot(mapFrame, sub.bounds, hotspotTints[index % hotspotTints.size], sub.name) {
@@ -69,7 +69,7 @@ fun buildSceneMap(root: Container, nav: Navigator, sceneId: String) {
     }
     root.partList(
         mapFrame,
-        "Parts of the room",
+        "Partes de la sala",
         scene.subscenes.map { it.name to { nav.push(Route.SceneCloseup(scene.id, it.id)) } },
     )
 }
@@ -80,8 +80,8 @@ fun buildSceneCloseup(root: Container, nav: Navigator, sceneId: String, subScene
     val sub = scene?.subscenes?.firstOrNull { it.id == subSceneId }
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
     if (scene == null || sub == null) {
-        root.chrome("The Scene", case.title, nav, true)
-        root.text("That part of the room is missing.", textSize = 18.0, color = Palette.paper) {
+        root.chrome("La escena", case.title, nav, true)
+        root.text("Esa parte de la sala no está.", textSize = 18.0, color = Palette.paper) {
             position(28.0, Desk.HEADER + 24.0)
         }
         return
@@ -89,7 +89,7 @@ fun buildSceneCloseup(root: Container, nav: Navigator, sceneId: String, subScene
     root.chrome(clipText(sub.name, 22), scene.name, nav, true)
     root.drawPlate(nav, sub.image, mapFrame)
     if (sub.items.isEmpty()) {
-        root.text("Nothing here to take to the desk.", textSize = 18.0, color = Palette.paper) {
+        root.text("Nada que llevar al escritorio.", textSize = 18.0, color = Palette.paper) {
             position(28.0, mapFrame.y + mapFrame.h + 24.0)
         }
         return
@@ -104,7 +104,7 @@ fun buildSceneCloseup(root: Container, nav: Navigator, sceneId: String, subScene
         val item = case.items.firstOrNull { it.id == spot.itemId } ?: return@mapNotNull null
         item.name to { nav.push(Route.SceneFind(scene.id, sub.id, item.id)) }
     }
-    root.partList(mapFrame, "Objects here", rows)
+    root.partList(mapFrame, "Objetos aquí", rows)
 }
 
 fun buildSceneFind(
@@ -121,8 +121,8 @@ fun buildSceneFind(
     val item = case.items.firstOrNull { it.id == itemId }
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
     if (scene == null || sub == null || item == null) {
-        root.chrome("Object", case.title, nav, true)
-        root.text("That object is not in this case.", textSize = 18.0, color = Palette.paper) {
+        root.chrome("Objeto", case.title, nav, true)
+        root.text("Ese objeto no está en este caso.", textSize = 18.0, color = Palette.paper) {
             position(28.0, Desk.HEADER + 24.0)
         }
         return
@@ -142,11 +142,11 @@ fun buildSceneFind(
     val barY = Desk.H - 88.0
     if (sent) {
         root.solidRect(656.0, 64.0, Palette.greenFelt) { position(32.0, barY) }
-        root.text("Already sent to the desk", textSize = 20.0, color = Palette.paper) { position(48.0, barY + 18.0) }
+        root.text("Ya enviado al escritorio", textSize = 20.0, color = Palette.paper) { position(48.0, barY + 18.0) }
     } else {
-        root.actionButton("Send to desk", 32.0, barY, 656.0, 64.0, Palette.brass, Palette.ink) {
+        root.actionButton("Enviar al escritorio", 32.0, barY, 656.0, 64.0, Palette.brass, Palette.ink) {
             engine.discoverItem(item.id)
-            nav.banner = "${item.name} is on the desk."
+            nav.banner = "${item.name} está en el escritorio."
             nav.refresh()
         }
     }

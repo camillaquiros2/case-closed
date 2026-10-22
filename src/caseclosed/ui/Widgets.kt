@@ -159,7 +159,7 @@ fun Container.chrome(title: String, subtitle: String, nav: Navigator, back: Bool
     text(clipText(subtitle, 48), textSize = 14.0, color = Palette.brass) { position(24.0, 18.0) }
     text(clipText(title, 28), textSize = 30.0, color = Palette.paper) { position(24.0, 46.0) }
     if (back && nav.canPop()) {
-        actionButton("Back", Desk.W - 148.0, 40.0, 120.0, 52.0, Palette.brassDim, Palette.paper) {
+        actionButton("Volver", Desk.W - 148.0, 40.0, 120.0, 52.0, Palette.brassDim, Palette.paper) {
             nav.pop()
         }
     }
@@ -212,19 +212,19 @@ fun Container.noteEditor(
             position(0.0, 160.0)
             textSize = 20.0
         }
-        actionButton("Save Note", 0.0, 310.0, 280.0, 56.0, Palette.greenFelt, Palette.paper) {
+        actionButton("Guardar nota", 0.0, 310.0, 280.0, 56.0, Palette.greenFelt, Palette.paper) {
             val note = input.text
             dismiss()
             onDone(note, false)
         }
         if (allowPin) {
-            actionButton("Save and Pin", 300.0, 310.0, 280.0, 56.0, Palette.wax, Palette.paper) {
+            actionButton("Guardar y fijar", 300.0, 310.0, 280.0, 56.0, Palette.wax, Palette.paper) {
                 val note = input.text
                 dismiss()
                 onDone(note, true)
             }
         }
-        actionButton("Cancel", 0.0, 384.0, 200.0, 52.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton("Cancelar", 0.0, 384.0, 200.0, 52.0, Palette.brassDim, Palette.paper) { dismiss() }
     }
 }
 
@@ -232,7 +232,7 @@ fun Container.confirmDialog(title: String, body: String, confirmLabel: String, o
     overlay(640.0, 460.0, dismissOnScrim = false) { dismiss ->
         text(title, textSize = 28.0, color = Palette.ink) { position(0.0, 0.0) }
         blockText(body, 0.0, 56.0, 580.0, 20.0, Palette.ink)
-        actionButton("Cancel", 0.0, 280.0, 250.0, 60.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton("Cancelar", 0.0, 280.0, 250.0, 60.0, Palette.brassDim, Palette.paper) { dismiss() }
         actionButton(confirmLabel, 280.0, 280.0, 280.0, 60.0, Palette.wax, Palette.paper) {
             dismiss()
             onConfirm()
@@ -265,7 +265,7 @@ fun Container.sentenceBlock(
     onTap: () -> Unit,
 ): Double {
     val lines = wrapLines(sentence, width - 24.0, 18.0)
-    val noteLines = if (note.isNullOrBlank()) emptyList() else wrapLines("Note: $note", width - 24.0, 14.0)
+    val noteLines = if (note.isNullOrBlank()) emptyList() else wrapLines("Nota: $note", width - 24.0, 14.0)
     val h = 14.0 + lines.size * 23.0 + noteLines.size * 18.0 + 10.0
     solidRect(width, h, if (note != null) Palette.highlight else Palette.paper) { position(0.0, y) }
     lines.forEachIndexed { index, line ->

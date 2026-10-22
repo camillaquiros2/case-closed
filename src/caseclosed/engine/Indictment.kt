@@ -14,13 +14,13 @@ fun evaluateIndictment(
 ): Verdict {
     if (accusedId != solution.guiltySuspectId) {
         val critique = solution.failureHints[accusedId]
-            ?: "The Chief Inspector slides the docket back across the desk."
+            ?: "El inspector jefe desliza el expediente de vuelta por el escritorio."
         return Verdict.Rejected(critique)
     }
     val missing = solution.requiredEvidenceIds.filter { it !in selectedEntityIds }
     if (selectedEntityIds.size < solution.minEvidenceCount || missing.isNotEmpty()) {
         val critique = solution.failureHints[accusedId]
-            ?: "The name is right. The pinned proof is not enough to hold."
+            ?: "El nombre es correcto. Las pruebas fijadas no bastan para sostenerlo."
         return Verdict.Rejected(critique)
     }
     return Verdict.Solved(solution.explanation)
