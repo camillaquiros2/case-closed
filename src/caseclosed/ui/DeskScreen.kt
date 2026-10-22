@@ -56,13 +56,16 @@ fun buildDesk(root: Container, nav: Navigator) {
     ) { nav.push(Route.Suspects) }
 
     val mid = top + 208.0
-    val wide = 320.0
     deskCard(
-        root, left, mid, wide, 220.0, Palette.locker, "Evidence Locker",
+        root, left, mid, cardW, 220.0, Palette.locker, "Evidence Locker",
         "${state.discoveredItemIds.size} logged", nav.assets, null,
     ) { nav.push(Route.Items) }
     deskCard(
-        root, left + wide + gap, mid, wide, 220.0, Palette.cork, "Evidence Board",
+        root, left + cardW + gap, mid, cardW, 220.0, Palette.greenFelt, GameText.CLUE_LOG,
+        GameText.clueCount(engine.clueLog().size), nav.assets, null,
+    ) { nav.push(Route.Clues) }
+    deskCard(
+        root, left + (cardW + gap) * 2, mid, cardW, 220.0, Palette.cork, "Evidence Board",
         "${state.boardNodes.size} pins  ·  ${state.boardConnections.size} strings",
         nav.assets, "images/desk/cork_texture.png",
     ) { nav.push(Route.Board) }

@@ -4,11 +4,14 @@ import caseclosed.data.CaseCatalog
 import caseclosed.engine.GameEngine
 import caseclosed.engine.GameSaves
 import caseclosed.model.CaseInvestigationState
+import caseclosed.model.ClueKind
 import caseclosed.model.GlobalProgression
 import caseclosed.model.Verdict
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class EngineTest {
@@ -67,6 +70,46 @@ class EngineTest {
         assertTrue(reloaded.isStarted())
         reloaded.startCase()
         assertEquals(1, reloaded.investigation().boardNodes.size)
+    }
+
+    @Test
+    fun clueLogRegistersEachDiscoveryOnceWithItsSource() {
+        val saves = MemoryGameSaves()
+        val engine = GameEngine(saves, now = { 50L })
+        engine.load()
+        engine.startCase()
+        val case = engine.activeCase()
+
+        val startingEvidence = engine.clueLog().filter { it.kind == ClueKind.EVIDENCE }.map { it.id }
+        assertEquals(engine.investigation().discoveredItemIds, startingEvidence)
+
+        assertTrue(engine.discoverItem("item_telegram"))
+        engine.discoverItem("item_telegram")
+        val telegram = engine.clueLog().single { it.id == "item_telegram" }
+        assertEquals(false, telegram.relevant)
+
+        val clue = assertNotNull(CaseCatalog.findClue(case, "hl_001"))
+        repeat(2) {
+            engine.saveHighlight("hl_001", "document", "file_001", "sec_001", null, clue.text, clue.description)
+        }
+        val excerpt = engine.clueLog().single { it.id == "hl_001" }
+        assertEquals(ClueKind.DOCUMENT_EXCERPT, excerpt.kind)
+        assertEquals(true, excerpt.relevant)
+        assertEquals("file_001", excerpt.sourceId)
+        assertEquals(case.files.first { it.id == "file_001" }.title, excerpt.title)
+
+        val ownId = engine.saveHighlight(null, "document", "file_001", "sec_001", null, "La boca estaba seca.", "")
+        assertNull(engine.clueLog().single { it.id == ownId }.relevant)
+
+        val nodeId = assertNotNull(engine.addReference(excerpt))
+        assertEquals(nodeId, engine.addReference(excerpt))
+        assertTrue(engine.isReferenced(excerpt))
+        assertEquals(1, engine.investigation().boardNodes.count { it.entityId == "hl_001" })
+        assertNull(engine.addReference(excerpt.copy(id = "hl_004")))
+
+        val reloaded = GameEngine(saves, now = { 50L })
+        reloaded.load()
+        assertEquals(engine.clueLog(), reloaded.clueLog())
     }
 }
 
