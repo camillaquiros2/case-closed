@@ -124,21 +124,46 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
                 question,
             )
             if (!available) continue
+
             val rowY = y
-            solidRect(640.0, 72.0, Palette.paper) {
+            // Identifica preguntas que requieren descubrimientos.
+            val isUnlockedContent =
+                question.requiredDiscoveryIds.isNotEmpty()
+            // Color especial para las preguntas desbloqueadas.
+            val backgroundColor = if (isUnlockedContent) {
+                Palette.gold
+            } else {
+                Palette.paper
+            }
+            // Fondo de la pregunta.
+            solidRect(640.0, 72.0, backgroundColor) {
                 position(8.0, rowY)
             }
+            // Texto principal de la pregunta.
             text(
                 clipText(question.question, 64),
                 textSize = 16.0,
                 color = Palette.ink,
             ) {
-                position(20.0, rowY + 24.0)
+                position(
+                    20.0,
+                    rowY + if (isUnlockedContent) 12.0 else 24.0
+                )
             }
+            // Indicador visible de contenido desbloqueado.
+            if (isUnlockedContent) {
+                text(
+                    "★ CONTENIDO DESBLOQUEADO POR PISTAS",
+                    textSize = 12.0,
+                    color = Palette.ink,
+                ) {
+                    position(20.0, rowY + 43.0)
+                }
+            }
+            // Mantiene el comportamiento original del botón.
             solidRect(640.0, 72.0, Colors.WHITE) {
                 position(8.0, rowY)
                 alpha = 0.01
-
                 onClick {
                     engine.askQuestion(suspectId, question)
                     nav.refresh()
