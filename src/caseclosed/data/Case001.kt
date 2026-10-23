@@ -267,7 +267,16 @@ internal val case001 = CasePack(
                         answer = "Estaba sobre el secante. Las tabletas seguían en sus compartimentos. No las toqué. Parecían sus pastillas habituales para el corazón.",
                         revealsItem = "item_pillbox",
                     ),
-                ),
+                    Question(
+                        id = "q_m4",
+                        question = "¿Por qué descarta que las pastillas causaran la muerte?",
+                        answer = "La forense confirmó que las tabletas estaban intactas. Si el veneno estaba en el brandy, entonces debemos investigar quién tuvo acceso a la copa después de que la serví.",
+                        requiredDiscoveryIds = listOf(
+                            "hl_001",
+                            "item_pillbox"
+                        ),
+                    ),
+                    ),
             ),
 
             Suspect(
@@ -297,7 +306,15 @@ internal val case001 = CasePack(
                         question = "¿Por qué iban a cancelar su asignación?",
                         answer = "Arthur malinterpretó una dosis. Estaba alterado. Pensaba explicárselo por la mañana. Nadie mata a un hombre por unos honorarios.",
                     ),
-                ),
+                    Question(
+                        id = "q_r4",
+                        question = "¿Cómo explica la cantidad de belladona faltante en su frasco?",
+                        answer = "No puedo negar que falta parte de la tintura. Pero eso no demuestra que yo la utilizara para envenenar a Arthur. Alguien pudo haber tenido acceso a mi maletín. Tendrá que demostrar quién manipuló la sustancia.",
+                        requiredDiscoveryIds = listOf(
+                            "item_vial"
+                        ),
+                    ),
+                    ),
             ),
         ),
 
