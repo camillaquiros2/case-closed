@@ -1,43 +1,5 @@
-import korlibs.korge.gradle.*
-
 plugins {
-	alias(libs.plugins.korge)
+    alias(libs.plugins.korge) apply false
+    id("com.soywiz.korge.library") version "6.0.0" apply false
+    id("com.soywiz.kproject") version "6.0.0" apply false
 }
-
-korge {
-	id = "com.caseclosed.deskdetective"
-
-// To enable all targets at once
-
-	//targetAll()
-
-// To enable targets based on properties/environment variables
-	//targetDefault()
-
-// To selectively enable targets
-	
-	targetJvm()
-	targetJs()
-    targetWasm()
-	targetDesktop()
-	targetIos()
-	targetAndroid()
-
-	serializationJson()
-}
-
-
-kotlin {
-    sourceSets {
-        val commonMain by getting {
-            // Drop-in art folder. Paths are images/desk/... and images/cases/...
-            resources.srcDir("public/assets")
-        }
-    }
-}
-
-dependencies {
-    add("commonMainApi", project(":deps"))
-    //add("commonMainApi", project(":korge-dragonbones"))
-}
-

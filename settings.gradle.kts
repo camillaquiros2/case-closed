@@ -22,4 +22,10 @@ buildscript {
 
 apply(plugin = "com.soywiz.korge.settings")
 
-rootProject.name = "korge-hello-world"
+rootProject.name = "CaseClosed"
+
+include(":shared")
+include(":androidApp")
+include(":desktopApp")
+include(":iosApp")
+include(":webApp")
