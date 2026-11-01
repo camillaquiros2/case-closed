@@ -1,0 +1,5 @@
+-dontwarn **
+-keep class com.caseclosed.deskdetective.** { *; }
+-keep class caseclosed.** { *; }
+-keep class korlibs.** { *; }
+-keep class com.sun.jna.** { *; }

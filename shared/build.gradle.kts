@@ -1,23 +1,78 @@
-import korlibs.korge.gradle.*
+import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    id("com.soywiz.korge.library")
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidMultiplatformLibrary)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.kotlinSerialization)
 }
 
-korge {
-    id = "com.caseclosed.deskdetective.shared"
-    // Library manifest only. The launcher activity lives in :androidApp.
-    androidLibrary = true
+kotlin {
+    jvm()
 
-    targetJvm()
-    targetJs()
-    targetWasm()
-    targetIos()
-    targetAndroid()
+    js {
+        browser()
+        binaries.executable()
+    }
 
-    serializationJson()
+    @OptIn(ExperimentalWasmDsl::class)
+    wasmJs {
+        browser()
+        binaries.executable()
+    }
+
+    android {
+        namespace = "com.caseclosed.deskdetective.shared"
+        compileSdk = libs.versions.android.compileSdk.get().toInt()
+        minSdk = libs.versions.android.minSdk.get().toInt()
+
+        compilerOptions {
+            jvmTarget = JvmTarget.JVM_21
+        }
+        androidResources {
+            enable = true
+        }
+        withHostTest {
+            isIncludeAndroidResources = true
+        }
+        withDeviceTestBuilder {
+            sourceSetTreeName = "test"
+        }.configure {
+            instrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        }
+    }
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(libs.compose.uiToolingPreview)
+            implementation(libs.compose.uiTooling)
+        }
+        commonMain.dependencies {
+            implementation(libs.compose.runtime)
+            implementation(libs.compose.foundation)
+            implementation(libs.compose.material3)
+            implementation(libs.compose.ui)
+            implementation(libs.compose.components.resources)
+            implementation(libs.compose.uiToolingPreview)
+            implementation(libs.androidx.lifecycle.viewmodelCompose)
+            implementation(libs.androidx.lifecycle.runtimeCompose)
+            implementation(libs.kotlinx.serialization.json)
+            api(libs.korge)
+        }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+        }
+        jsMain.dependencies {
+            implementation(libs.wrappers.browser)
+        }
+        getByName("androidDeviceTest").dependencies {
+            implementation(libs.androidx.testRunner)
+        }
+    }
 }
 
 dependencies {
-    add("commonMainApi", project(":deps"))
+    androidRuntimeClasspath(libs.compose.uiTooling)
 }
