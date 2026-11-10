@@ -1,5 +1,6 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.model.CaseFile
 import caseclosed.model.DocReference
 import caseclosed.model.FileSection
@@ -79,8 +80,8 @@ fun buildDocument(root: Container, nav: Navigator, fileId: String) {
     val file = case.files.first { it.id == fileId }
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
     root.chrome(clipText(file.title, 24), file.documentNumber, nav, true)
-    root.actionButton("Subir", 24.0, Desk.HEADER + 10.0, 120.0, 44.0, Palette.brassDim, Palette.paper) {}
-    root.actionButton("Bajar", 156.0, Desk.HEADER + 10.0, 120.0, 44.0, Palette.brassDim, Palette.paper) {}
+    root.actionButton("Subir", 24.0, Desk.HEADER + 8.0, 140.0, 48.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.SUBIR) {}
+    root.actionButton("Bajar", 176.0, Desk.HEADER + 8.0, 140.0, 48.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.BAJAR) {}
     val scroller = root.scrollBox(
         x = 24.0,
         y = Desk.HEADER + 64.0,
@@ -172,6 +173,7 @@ private fun renderSection(
                 body = sentence,
                 initial = saved?.note ?: "",
                 allowPin = true,
+                assets = nav.assets,
             ) { note, pin ->
                 val id = engine.saveHighlight(
                     id = saved?.id,
@@ -205,6 +207,7 @@ private fun renderSection(
                 body = clue.text,
                 initial = existing?.note ?: clue.description,
                 allowPin = true,
+                assets = nav.assets,
             ) { note, pin ->
                 engine.saveHighlight(
                     id = clue.id,

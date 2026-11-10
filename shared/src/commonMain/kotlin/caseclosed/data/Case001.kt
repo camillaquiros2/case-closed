@@ -20,7 +20,7 @@ import caseclosed.model.Suspect
 private const val SCENE = "images/cases/case_001/scenes/manor_study/overhead.png"
 
 internal val case001 = CasePack(
-    initialDiscoveredItemIds = listOf("item_brandy", "item_pillbox"),
+    initialDiscoveredItemIds = listOf("item_brandy", "item_pillbox", "item_vial"),
     data = CaseData(
         id = "case_001",
         caseNumber = "CC-1924-014",
@@ -45,12 +45,12 @@ internal val case001 = CasePack(
                     FileSection(
                         id = "sec_001",
                         heading = "Examen",
-                        content = "Lord Arthur Blackwood, de cincuenta y ocho años, fue examinado en el estudio a las 12:40 a. m. Las pupilas estaban dilatadas. La boca estaba seca. El corazón se había acelerado antes de detenerse. Estos signos corresponden a la belladona. No corresponden a la digitalina. Las tabletas del pastillero abierto están intactas y no fueron la causa de la muerte.",
+                        content = "Lord Arthur Blackwood, de cincuenta y ocho años, fue examinado en el estudio a las 12:40 a. m. Las pupilas estaban dilatadas. La boca estaba seca. El corazón se había acelerado antes de detenerse. Estos signos corresponden a la belladona (veneno). No corresponden a la digitalina. Las tabletas del pastillero abierto están intactas y no fueron la causa de la muerte.",
                         highlightableClues = listOf(
                             ClueDef(
                                 id = "hl_001",
-                                text = "Estos signos corresponden a la belladona.",
-                                description = "La dosis mortal fue de belladona, no del tónico cardíaco.",
+                                text = "Estos signos corresponden a la belladona (veneno).",
+                                description = "La dosis mortal fue de belladona (veneno), no del tónico cardíaco.",
                             ),
                         ),
                         references = listOf(
@@ -83,11 +83,11 @@ internal val case001 = CasePack(
                     FileSection(
                         id = "sec_003",
                         heading = "Análisis químico",
-                        content = "El residuo blanco en el interior de la copa es belladona concentrada. Corresponde a una tintura de boticario, no a un amargo de cocina. Aproximadamente dos dracmas fueron vertidas en el brandy después de que la copa ya había sido servida.",
+                        content = "El residuo blanco en el interior de la copa es belladona (veneno) concentrada. Corresponde a una tintura de boticario, no a un amargo de cocina. Aproximadamente dos dracmas fueron vertidas en el brandy después de que la copa ya había sido servida.",
                         highlightableClues = listOf(
                             ClueDef(
                                 id = "hl_002",
-                                text = "El residuo blanco en el interior de la copa es belladona concentrada.",
+                                text = "El residuo blanco en el interior de la copa es belladona (veneno) concentrada.",
                                 description = "Alguien envenenó directamente el brandy.",
                             ),
                         ),
@@ -133,12 +133,12 @@ internal val case001 = CasePack(
                     FileSection(
                         id = "sec_006",
                         heading = "La puerta",
-                        content = "El Dr. Reid entró mientras yo salía y dijo que solo tardaría un momento en tomarle el pulso a su señoría. Llevaba su maletín negro. El señor Julian estuvo encerrado en la sala de billar desde las diez. Yo mismo tuve que abrirle cuando se dio la alarma.",
+                        content = "El Dr. Reid entró mientras yo salía, con su maletín negro, y dijo que solo tardaría un momento en tomarle el pulso a su señoría. El señor Julian estuvo encerrado en la sala de billar desde las diez. Yo mismo tuve que abrirle cuando se dio la alarma.",
                         highlightableClues = listOf(
                             ClueDef(
                                 id = "hl_003",
-                                text = "El Dr. Reid entró mientras yo salía y dijo que solo tardaría un momento en tomarle el pulso a su señoría.",
-                                description = "Reid entró al estudio después de que el brandy había sido servido.",
+                                text = "El Dr. Reid entró mientras yo salía, con su maletín negro, y dijo que solo tardaría un momento en tomarle el pulso a su señoría.",
+                                description = "Reid entró al estudio con el maletín después de que el brandy había sido servido.",
                             ),
                         ),
                         references = listOf(
@@ -258,7 +258,7 @@ internal val case001 = CasePack(
                     Question(
                         id = "q_m2",
                         question = "¿Quién pasó junto a usted en la puerta?",
-                        answer = "El Dr. Reid entró mientras yo salía y dijo que solo tardaría un momento en tomarle el pulso a su señoría.",
+                        answer = "El Dr. Reid. Lo vi entrar mientras yo salía, con su maletín negro. Dijo que solo tardaría un momento en tomarle el pulso a su señoría.",
                         revealsClue = "hl_003",
                     ),
                     Question(
@@ -293,11 +293,12 @@ internal val case001 = CasePack(
                         id = "q_r1",
                         question = "¿Entró al estudio después de la cena?",
                         answer = "No. Estaba en la sala de armas escribiendo una receta para la cocinera. Quien diga lo contrario está equivocado.",
+                        requiredDiscoveryIds = listOf("hl_003"),
                     ),
                     Question(
                         id = "q_r2",
-                        question = "¿Qué contiene el frasco ámbar?",
-                        answer = "Belladona, diluida para preparar un linimento. No lo he abierto en una semana. Lo encontrará en mi maletín si insiste en registrar las pertenencias de un médico.",
+                        question = "¿Qué contiene el frasco ámbar de su maletín?",
+                        answer = "Belladona (veneno), diluida para un linimento. El frasco va en el maletín y no lo he abierto en una semana.",
                         revealsItem = "item_vial",
                         requiredDiscoveryIds = listOf("hl_002", "hl_003"),
                     ),
@@ -308,7 +309,7 @@ internal val case001 = CasePack(
                     ),
                     Question(
                         id = "q_r4",
-                        question = "¿Cómo explica la cantidad de belladona faltante en su frasco?",
+                        question = "¿Cómo explica la cantidad de belladona (veneno) faltante en su frasco?",
                         answer = "No puedo negar que falta parte de la tintura. Pero eso no demuestra que yo la utilizara para envenenar a Arthur. Alguien pudo haber tenido acceso a mi maletín. Tendrá que demostrar quién manipuló la sustancia.",
                         requiredDiscoveryIds = listOf(
                             "item_vial"
@@ -325,7 +326,7 @@ internal val case001 = CasePack(
                 image = "images/cases/case_001/items/item_brandy.png",
                 shortNotes = "Residuo blanco en la copa. Huellas de Reid en el borde.",
                 description = "La copa nocturna de Lord Arthur, recogida del escritorio. El brandy está medio bebido. Una película blanquecina permanece adherida al interior.",
-                findings = "El residuo es belladona concentrada. Las huellas del borde coinciden con las del Dr. Alistair Reid. Las huellas de Morris Graves aparecen únicamente en el asa de la bandeja.",
+                findings = "El residuo es belladona (veneno) concentrada. Las huellas del borde coinciden con las del Dr. Alistair Reid. Las huellas de Morris Graves aparecen únicamente en el asa de la bandeja.",
                 relatedFileIds = listOf("file_001", "file_002", "file_003"),
                 origin = ItemOrigin.FILE,
             ),
@@ -352,19 +353,19 @@ internal val case001 = CasePack(
             ),
             Item(
                 id = "item_vial",
-                name = "Frasco de belladona",
+                name = "Frasco de belladona (veneno)",
                 image = "images/cases/case_001/items/item_vial.png",
                 shortNotes = "Frasco ámbar de boticario encontrado en el maletín de Reid. Faltan dos dracmas.",
-                description = "Un pequeño frasco ámbar etiquetado como Tintura de Belladona, recuperado del maletín negro del Dr. Reid en la sala de armas.",
+                description = "Un pequeño frasco ámbar etiquetado como Tintura de Belladona (veneno), recuperado del maletín negro del Dr. Reid en la sala de armas.",
                 findings = "Faltan aproximadamente dos dracmas. La cantidad coincide con la concentración encontrada en la copa. El tapón fue abierto recientemente.",
                 relatedFileIds = listOf("file_002"),
-                origin = ItemOrigin.SCENE,
+                origin = ItemOrigin.FILE,
             ),
             Item(
                 id = "item_lamp",
                 name = "Lámpara de escritorio",
                 image = "images/cases/case_001/items/item_lamp.png",
-                shortNotes = "Aceite reciente. Ningún residuo de belladona.",
+                shortNotes = "Aceite reciente. Ningún residuo de belladona (veneno).",
                 description = "Una lámpara de latón sobre la mesa auxiliar junto al sillón. El cristal está limpio y la mecha está recortada.",
                 findings = "El aceite es de uso doméstico. No hay veneno, ni huellas distintas, ni relación con la copa.",
                 relevant = false,
@@ -384,9 +385,9 @@ internal val case001 = CasePack(
                         image = "images/cases/case_001/scenes/manor_study/escritorio.png",
                         bounds = box(24.0, 28.0, 37.0, 36.0),
                         items = listOf(
-                            spot("item_brandy", 8.0, 43.0, 28.0, 36.0),
-                            spot("item_pillbox", 36.0, 14.0, 24.0, 27.0),
-                            spot("item_telegram", 55.0, 38.0, 43+.0, 40.0),
+                            spot("item_brandy", cutout("escritorio", "item_brandy"), 8.0, 43.0, 28.0, 36.0),
+                            spot("item_pillbox", cutout("escritorio", "item_pillbox"), 36.0, 14.0, 24.0, 27.0),
+                            spot("item_telegram", cutout("escritorio", "item_telegram"), 55.0, 38.0, 43.0, 40.0),
                         ),
                     ),
                     SubScene(
@@ -395,7 +396,7 @@ internal val case001 = CasePack(
                         image = "images/cases/case_001/scenes/manor_study/maletin.png",
                         bounds = box(24.0, 66.0, 22.0, 22.0),
                         items = listOf(
-                            spot("item_vial", 28.0, 30.0, 36.0, 40.0),
+                            spot("item_vial", cutout("maletin", "item_vial"), 28.0, 30.0, 36.0, 40.0),
                         ),
                     ),
                     SubScene(
@@ -404,7 +405,7 @@ internal val case001 = CasePack(
                         image = "images/cases/case_001/scenes/manor_study/sillon.png",
                         bounds = box(66.0, 8.0, 28.0, 32.0),
                         items = listOf(
-                            spot("item_lamp", 32.0, 36.0, 34.0, 40.0),
+                            spot("item_lamp", cutout("sillon", "item_lamp"), 32.0, 36.0, 34.0, 40.0),
                         ),
                     ),
                 ),
@@ -415,12 +416,12 @@ internal val case001 = CasePack(
             guiltySuspectId = "suspect_reid",
             requiredEvidenceIds = listOf("item_brandy", "item_vial", "hl_003"),
             minEvidenceCount = 2,
-            explanation = "El Dr. Alistair Reid envenenó el brandy con belladona de su propio frasco después de que Graves abandonara el estudio. Sus huellas están en el borde de la copa. El pastillero de digitalina fue una distracción. Arthur estaba a pocas horas de cancelar la asignación de Reid, y Reid no podía permitir que aquel documento fuera firmado.",
+            explanation = "El Dr. Alistair Reid envenenó el brandy con belladona (veneno) de su propio frasco después de que Graves abandonara el estudio. Sus huellas están en el borde de la copa. El pastillero de digitalina fue una distracción. Arthur estaba a pocas horas de cancelar la asignación de Reid, y Reid no podía permitir que aquel documento fuera firmado.",
             failureHints = mapOf(
                 "suspect_eleanor" to "Los zapatos de Lady Eleanor tienen tierra húmeda del invernadero y su patrimonio ya estaba protegido. El dolor no es culpabilidad. Fíjate de nuevo en quién tocó la copa.",
                 "suspect_julian" to "El sobrino tiene deudas, pero eso no lo convierte en asesino. Graves tuvo que abrir la sala de billar para dejarlo salir. Sigue el dinero de la asignación, no el telegrama.",
                 "suspect_morris" to "Graves sirvió la bandeja y sus huellas solo aparecen allí. El borde de la copa cuenta otra historia. El mayordomo encontró el cuerpo; no preparó el veneno.",
-                "suspect_reid" to "Reid es el hombre. Pero no puedo detenerlo por una corazonada. Necesito la copa, el frasco de belladona y el testimonio de Graves que lo sitúa entrando al estudio.",
+                "suspect_reid" to "Reid es el hombre. Pero no puedo detenerlo por una corazonada. Necesito la copa, el frasco de belladona (veneno) y el testimonio de Graves que lo sitúa entrando al estudio.",
             ),
         ),
 
@@ -436,7 +437,7 @@ internal val case001 = CasePack(
                 id = "msg_002",
                 caller = "Forense Ada Quinn",
                 time = "1:05 a. m.",
-                message = "Pupilas muy dilatadas, piel enrojecida, garganta seca. Es belladona, no la digitalina de su pastillero. Busca una tintura concentrada. Las pastillas no lo mataron.",
+                message = "Pupilas muy dilatadas, piel enrojecida, garganta seca. Es belladona (veneno), no la digitalina de su pastillero. Busca una tintura concentrada. Las pastillas no lo mataron.",
                 unread = true,
             ),
         ),
@@ -445,10 +446,7 @@ internal val case001 = CasePack(
             DiscoveryDef("item_brandy"),
             DiscoveryDef("item_pillbox"),
             DiscoveryDef("item_telegram"),
-            DiscoveryDef(
-                "item_vial",
-                requiredDiscoveryIds = listOf("hl_002", "hl_003"),
-            ),
+            DiscoveryDef("item_vial"),
             DiscoveryDef("hl_001"),
             DiscoveryDef(
                 "hl_002",
@@ -463,3 +461,6 @@ internal val case001 = CasePack(
         ),
     ),
 )
+
+private fun cutout(subSceneId: String, itemId: String) =
+    sceneItemPng("case_001", "manor_study", subSceneId, itemId)

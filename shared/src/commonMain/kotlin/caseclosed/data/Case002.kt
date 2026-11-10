@@ -261,7 +261,7 @@ internal val case002 = CasePack(
                         image = "images/cases/case_002/scenes/warehouse/coat.png",
                         bounds = box(40.0, 28.0, 28.0, 40.0),
                         items = listOf(
-                            spot("item_ledger", 30.0, 34.0, 36.0, 32.0),
+                            spot("item_ledger", cutout("warehouse", "coat", "item_ledger"), 30.0, 34.0, 36.0, 32.0),
                         ),
                     ),
                     SubScene(
@@ -270,7 +270,7 @@ internal val case002 = CasePack(
                         image = "images/cases/case_002/scenes/warehouse/crates.png",
                         bounds = box(70.0, 55.0, 24.0, 32.0),
                         items = listOf(
-                            spot("item_flask", 24.0, 28.0, 40.0, 36.0),
+                            spot("item_flask", cutout("warehouse", "crates", "item_flask"), 24.0, 28.0, 40.0, 36.0),
                         ),
                     ),
                 ),
@@ -286,7 +286,7 @@ internal val case002 = CasePack(
                         image = "images/cases/case_002/scenes/harbor_office/desk.png",
                         bounds = box(22.0, 30.0, 56.0, 40.0),
                         items = listOf(
-                            spot("item_key", 40.0, 38.0, 22.0, 28.0),
+                            spot("item_key", cutout("harbor_office", "desk", "item_key"), 40.0, 38.0, 22.0, 28.0),
                         ),
                     ),
                 ),
@@ -335,3 +335,6 @@ internal val case002 = CasePack(
         ),
     ),
 )
+
+private fun cutout(sceneId: String, subSceneId: String, itemId: String) =
+    sceneItemPng("case_002", sceneId, subSceneId, itemId)

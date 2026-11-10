@@ -1,5 +1,6 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.model.CaseData
 import caseclosed.model.CaseInvestigationState
 import korlibs.korge.view.Container
@@ -38,7 +39,7 @@ object GameText {
     fun inProgress(logged: Int, pins: Int): String = "En curso  ·  $logged registradas  ·  $pins fichas"
 
     fun restartWarning(caseNumber: String): String =
-        "Esto borra el tablero, las notas, las marcas, las entrevistas y las pruebas halladas de $caseNumber. Los casos resueltos siguen resueltos."
+        "Esto borra el tablero, las notas, las marcas, las entrevistas y las pruebas halladas de $caseNumber. El caso vuelve a abrirse. Los otros casos resueltos siguen resueltos."
 
     fun clueCount(count: Int): String = "$count pistas"
 
@@ -69,22 +70,25 @@ fun buildTitle(root: Container, nav: Navigator) {
     val buttonY = cardY + cardH + 32.0
 
     val label = if (started) GameText.RESUME_CASE else GameText.START_CASE
-    root.actionButton(label, left, buttonY, width, 72.0, Palette.wax, Palette.paper) {
+    val icon = if (started) ButtonIcons.REANUDAR else ButtonIcons.EMPEZAR
+    root.actionButton(label, left, buttonY, width, 72.0, Palette.wax, Palette.paper, nav.assets, icon) {
         if (!started) nav.banner = "${GameText.CASE_OPENED}: ${case.caseNumber}"
         engine.startCase()
         nav.go(Route.Desk)
     }
 
     if (started) {
-        root.actionButton(GameText.RESTART_CASE, left, buttonY + 88.0, width, 60.0, Palette.brassDim, Palette.paper) {
+        root.actionButton(GameText.RESTART_CASE, left, buttonY + 88.0, width, 64.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.REINICIAR) {
             root.confirmDialog(
                 GameText.RESTART_TITLE,
                 GameText.restartWarning(case.caseNumber),
                 GameText.RESTART_CONFIRM,
+                nav.assets,
+                ButtonIcons.REINICIAR,
             ) {
                 engine.restartCase()
                 nav.banner = "${GameText.CASE_RESTARTED}: ${case.caseNumber}"
-                nav.go(Route.Desk)
+                nav.post { nav.go(Route.Desk) }
             }
         }
     }

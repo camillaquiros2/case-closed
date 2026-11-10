@@ -1,5 +1,6 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.shared.generated.resources.Res
 import korlibs.image.bitmap.Bitmap
 import korlibs.image.color.Colors
@@ -8,8 +9,11 @@ import korlibs.io.file.VfsFile
 import korlibs.io.stream.openAsync
 import korlibs.korge.input.draggableCloseable
 import korlibs.korge.input.onClick
+import korlibs.korge.input.onOut
+import korlibs.korge.input.onOver
 import korlibs.korge.ui.uiTextInput
 import korlibs.korge.view.Container
+import korlibs.korge.view.addUpdater
 import korlibs.korge.view.alpha
 import korlibs.korge.view.anchor
 import korlibs.korge.view.container
@@ -25,6 +29,8 @@ import korlibs.math.geom.degrees
 import kotlin.math.PI
 import kotlin.math.atan2
 import kotlin.math.hypot
+import kotlin.math.min
+import kotlin.time.DurationUnit
 
 class AssetBank(private val vfs: VfsFile? = null) {
     private val cache = mutableMapOf<String, Bitmap?>()
@@ -86,13 +92,72 @@ fun Container.actionButton(
     h: Double,
     fill: RGBAFill,
     ink: RGBAFill,
+    assets: AssetBank,
+    icon: String,
     onPress: () -> Unit,
 ) {
-    container {
-        position(x, y)
-        solidRect(w, h, fill)
-        text(label, textSize = 18.0, color = ink) { position(14.0, (h - 22.0) / 2.0) }
-        hitRect(w, h, onPress)
+    val selected = fill == Palette.gold
+    val frame = if (selected) Palette.gold else Palette.brass
+    val plate = if (selected) Colors["#8E2E2E"] else Palette.wax
+    val button = container { position(x, y) }
+    button.solidRect(w, h, frame)
+    button.solidRect(w - 6.0, h - 6.0, plate) { position(3.0, 3.0) }
+    val iconBox = (h - 16.0).coerceIn(26.0, 52.0)
+    val iconX = 8.0
+    val iconY = (h - iconBox) / 2.0
+    button.buttonLogo(assets, icon, iconX, iconY, iconBox)
+    val dividerX = iconX + iconBox + 8.0
+    button.solidRect(2.0, (h - 18.0).coerceAtLeast(12.0), Palette.paper) {
+        position(dividerX, (h - (h - 18.0).coerceAtLeast(12.0)) / 2.0)
+        alpha = 0.9
+        mouseEnabled = false
+    }
+    val textX = dividerX + 12.0
+    val textSize = if (h < 56.0) 15.0 else 18.0
+    val maxChars = ((w - textX - 8.0) / (textSize * 0.52)).toInt().coerceAtLeast(4)
+    button.text(clipText(label, maxChars), textSize = textSize, color = Palette.paper) {
+        position(textX, (h - textSize - 4.0) / 2.0)
+    }
+    var hovering = false
+    var shown = 0.0
+    button.solidRect(w, h, Colors.WHITE) {
+        alpha = 0.01
+        onClick { onPress() }
+        onOver { hovering = true }
+        onOut { hovering = false }
+    }
+    button.addUpdater { dt ->
+        val step = dt.toDouble(DurationUnit.SECONDS).coerceAtMost(0.05)
+        val target = if (hovering) 1.0 else 0.0
+        shown += (target - shown) * (step * 14.0).coerceAtMost(1.0)
+        button.y = y - shown * 3.0
+    }
+}
+
+private fun Container.buttonLogo(assets: AssetBank, path: String, x: Double, y: Double, size: Double) {
+    val bmp = assets.get(path)
+    if (bmp != null) {
+        val bw = bmp.width.toDouble().coerceAtLeast(1.0)
+        val bh = bmp.height.toDouble().coerceAtLeast(1.0)
+        val fitted = min(size / bw, size / bh)
+        val dw = bw * fitted
+        val dh = bh * fitted
+        image(bmp) {
+            position(x + (size - dw) / 2.0, y + (size - dh) / 2.0)
+            scale(fitted)
+            mouseEnabled = false
+        }
+    } else {
+        solidRect(size, size, Palette.paper) {
+            position(x, y)
+            alpha = 0.16
+            mouseEnabled = false
+        }
+        solidRect(size * 0.42, size * 0.5, Palette.paper) {
+            position(x + size * 0.29, y + size * 0.24)
+            alpha = 0.72
+            mouseEnabled = false
+        }
     }
 }
 
@@ -162,7 +227,7 @@ fun Container.chrome(title: String, subtitle: String, nav: Navigator, back: Bool
     text(clipText(subtitle, 48), textSize = 14.0, color = Palette.brass) { position(24.0, 18.0) }
     text(clipText(title, 28), textSize = 30.0, color = Palette.paper) { position(24.0, 46.0) }
     if (back && nav.canPop()) {
-        actionButton("Volver", Desk.W - 148.0, 40.0, 120.0, 52.0, Palette.brassDim, Palette.paper) {
+        actionButton("Volver", Desk.W - 168.0, 36.0, 140.0, 56.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.VOLVER) {
             nav.pop()
         }
     }
@@ -206,6 +271,7 @@ fun Container.noteEditor(
     body: String,
     initial: String,
     allowPin: Boolean,
+    assets: AssetBank,
     onDone: (note: String, pin: Boolean) -> Unit,
 ) {
     overlay(660.0, 560.0, dismissOnScrim = true) { dismiss ->
@@ -215,30 +281,37 @@ fun Container.noteEditor(
             position(0.0, 160.0)
             textSize = 20.0
         }
-        actionButton("Guardar nota", 0.0, 310.0, 280.0, 56.0, Palette.greenFelt, Palette.paper) {
+        actionButton("Guardar nota", 0.0, 310.0, 280.0, 56.0, Palette.greenFelt, Palette.paper, assets, ButtonIcons.GUARDAR) {
             val note = input.text
             dismiss()
             onDone(note, false)
         }
         if (allowPin) {
-            actionButton("Guardar y fijar", 300.0, 310.0, 280.0, 56.0, Palette.wax, Palette.paper) {
+            actionButton("Guardar y fijar", 300.0, 310.0, 280.0, 56.0, Palette.wax, Palette.paper, assets, ButtonIcons.FIJAR) {
                 val note = input.text
                 dismiss()
                 onDone(note, true)
             }
         }
-        actionButton("Cancelar", 0.0, 384.0, 200.0, 52.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton("Cancelar", 0.0, 384.0, 220.0, 52.0, Palette.brassDim, Palette.paper, assets, ButtonIcons.CANCELAR) { dismiss() }
     }
 }
 
-fun Container.confirmDialog(title: String, body: String, confirmLabel: String, onConfirm: () -> Unit) {
+fun Container.confirmDialog(
+    title: String,
+    body: String,
+    confirmLabel: String,
+    assets: AssetBank,
+    confirmIcon: String = ButtonIcons.CONFIRMAR,
+    onConfirm: () -> Unit,
+) {
     overlay(640.0, 460.0, dismissOnScrim = false) { dismiss ->
         text(title, textSize = 28.0, color = Palette.ink) { position(0.0, 0.0) }
         blockText(body, 0.0, 56.0, 580.0, 20.0, Palette.ink)
-        actionButton("Cancelar", 0.0, 280.0, 250.0, 60.0, Palette.brassDim, Palette.paper) { dismiss() }
-        actionButton(confirmLabel, 280.0, 280.0, 280.0, 60.0, Palette.wax, Palette.paper) {
-            dismiss()
+        actionButton("Cancelar", 0.0, 280.0, 250.0, 60.0, Palette.brassDim, Palette.paper, assets, ButtonIcons.CANCELAR) { dismiss() }
+        actionButton(confirmLabel, 280.0, 280.0, 280.0, 60.0, Palette.wax, Palette.paper, assets, confirmIcon) {
             onConfirm()
+            dismiss()
         }
     }
 }

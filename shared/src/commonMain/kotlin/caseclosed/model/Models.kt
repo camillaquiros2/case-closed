@@ -122,12 +122,20 @@ data class PercentBox(
 data class SceneItemSpot(
     val itemId: String,
     val bounds: PercentBox,
+    /**
+     * Cutout drawn inside [bounds], on top of the close-up.
+     * A PNG with no background: `images/cases/<case>/scenes/<scene>/<subscene>/<itemId>.png`
+     */
+    val image: String,
 )
 
 data class SubScene(
     val id: String,
     val name: String,
-    /** Close view. `images/cases/<case>/scenes/<scene>/<id>.png` */
+    /**
+     * Close view of the empty place. `images/cases/<case>/scenes/<scene>/<id>.png`
+     * Objects are not painted into this picture. Each spot draws its own PNG.
+     */
     val image: String,
     /** Where this part sits on the overhead image. */
     val bounds: PercentBox,

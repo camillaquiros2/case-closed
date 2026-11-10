@@ -63,6 +63,16 @@ class Navigator(
 
     fun refresh() = show()
 
+    /** Runs after this click finishes, so the screen can be rebuilt safely. */
+    fun post(block: () -> Unit) {
+        val tick = root.container()
+        tick.mouseEnabled = false
+        tick.addUpdater(first = false) {
+            tick.removeFromParent()
+            block()
+        }
+    }
+
     private fun showUnlockedQuestionNotice(host: Container) {
         val notices = mutableListOf<String>()
         while (true) {

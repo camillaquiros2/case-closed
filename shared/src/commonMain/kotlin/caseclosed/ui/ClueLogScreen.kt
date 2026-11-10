@@ -1,5 +1,6 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.model.ClueEntry
 import caseclosed.model.ClueKind
 import korlibs.korge.view.Container
@@ -85,20 +86,20 @@ private fun clueCard(parent: Container, nav: Navigator, entry: ClueEntry, y: Dou
     // The tap area sits under the buttons so they keep their own clicks.
     val hit = card.container()
     if (selected) {
-        card.actionButton(GameText.VIEW_SOURCE, LOG_PAD, cy, 290.0, 48.0, Palette.greenFelt, Palette.paper) {
+        card.actionButton(GameText.VIEW_SOURCE, LOG_PAD, cy, 300.0, 52.0, Palette.greenFelt, Palette.paper, nav.assets, ButtonIcons.VER_ORIGEN) {
             nav.push(sourceRoute(entry))
         }
         if (pinned) {
-            card.actionButton(GameText.OPEN_BOARD, LOG_PAD + 306.0, cy, 290.0, 48.0, Palette.brassDim, Palette.paper) {
+            card.actionButton(GameText.OPEN_BOARD, LOG_PAD + 312.0, cy, 300.0, 52.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.AL_TABLERO) {
                 nav.push(Route.Board)
             }
         } else {
-            card.actionButton(GameText.ADD_TO_BOARD, LOG_PAD + 306.0, cy, 290.0, 48.0, Palette.wax, Palette.paper) {
+            card.actionButton(GameText.ADD_TO_BOARD, LOG_PAD + 312.0, cy, 300.0, 52.0, Palette.wax, Palette.paper, nav.assets, ButtonIcons.ANADIR_TABLERO) {
                 engine.addReference(entry)
                 nav.refresh()
             }
         }
-        cy += 48.0 + LOG_PAD
+        cy += 52.0 + LOG_PAD
     }
 
     val h = cy

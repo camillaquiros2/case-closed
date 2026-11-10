@@ -1,5 +1,6 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.model.BoardNode
 import caseclosed.model.CaseData
 import caseclosed.model.CaseInvestigationState
@@ -89,16 +90,26 @@ fun buildBoard(root: Container, nav: Navigator) {
     }
 
     val toolsY = Desk.HEADER + 28.0
-    val linkBtn = root.container { position(16.0, toolsY) }
-    val linkFill = linkBtn.solidRect(166.0, 46.0, Palette.wax)
-    val linkLabel = linkBtn.text("Enlazar", textSize = 18.0, color = Palette.paper) { position(14.0, 12.0) }
-    linkBtn.hitRect(166.0, 46.0) {
-        linkMode = !linkMode
-        linkFill.color = if (linkMode) Palette.gold else Palette.wax
-        linkLabel.color = if (linkMode) Palette.ink else Palette.paper
-        linkLabel.text = if (linkMode) "Enlazando" else "Enlazar"
-        drawBoard()
+    val linkHost = root.container()
+    fun paintLink() {
+        linkHost.clearChildren()
+        linkHost.actionButton(
+            if (linkMode) "Enlazando" else "Enlazar",
+            16.0,
+            toolsY,
+            166.0,
+            48.0,
+            if (linkMode) Palette.gold else Palette.wax,
+            Palette.paper,
+            nav.assets,
+            ButtonIcons.ENLAZAR,
+        ) {
+            linkMode = !linkMode
+            paintLink()
+            drawBoard()
+        }
     }
+    paintLink()
 
     fun requireSelected(missing: String): BoardNode? {
         val node = nodeById(selected)
@@ -106,14 +117,14 @@ fun buildBoard(root: Container, nav: Navigator) {
         return node
     }
 
-    root.actionButton("Quitar", 190.0, toolsY, 166.0, 46.0, Palette.wax, Palette.paper) {
+    root.actionButton("Quitar", 190.0, toolsY, 166.0, 48.0, Palette.wax, Palette.paper, nav.assets, ButtonIcons.QUITAR) {
         val node = requireSelected("Toca una ficha del tablero y luego Quitar.") ?: return@actionButton
         engine.removeNode(node.id)
         selected = null
         drawBoard()
         drawTray()
     }
-    root.actionButton("Cortar", 364.0, toolsY, 166.0, 46.0, Palette.brassDim, Palette.paper) {
+    root.actionButton("Cortar", 364.0, toolsY, 166.0, 48.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.CORTAR) {
         val node = requireSelected("Toca una ficha y luego Cortar para soltar sus hilos.") ?: return@actionButton
         val doomed = engine.investigation().boardConnections.filter { it.fromNodeId == node.id || it.toNodeId == node.id }
         if (doomed.isEmpty()) {
@@ -123,7 +134,7 @@ fun buildBoard(root: Container, nav: Navigator) {
         doomed.forEach { engine.removeConnection(it.id) }
         drawBoard()
     }
-    root.actionButton("Abrir", 538.0, toolsY, 166.0, 46.0, Palette.greenFelt, Palette.paper) {
+    root.actionButton("Abrir", 538.0, toolsY, 166.0, 48.0, Palette.greenFelt, Palette.paper, nav.assets, ButtonIcons.ABRIR) {
         val node = requireSelected("Toca una ficha y luego Abrir.") ?: return@actionButton
         openInspector(root, nav, case, node) {
             if (nodeById(selected) == null) selected = null
@@ -215,14 +226,22 @@ fun buildBoard(root: Container, nav: Navigator) {
         val tabs = listOf("all" to "Todos", "suspect" to "Sospechosos", "item" to "Objetos", "highlight" to "Citas")
         tabs.forEachIndexed { index, (id, label) ->
             val x = 16.0 + index * 176.0
+            val icon = when (id) {
+                "all" -> ButtonIcons.TAB_TODOS
+                "suspect" -> ButtonIcons.TAB_SOSPECHOSOS
+                "item" -> ButtonIcons.TAB_OBJETOS
+                else -> ButtonIcons.TAB_CITAS
+            }
             tabLayer.actionButton(
                 label,
                 x,
                 filtersY,
                 168.0,
-                44.0,
+                48.0,
                 if (filter == id) Palette.gold else Palette.brassDim,
                 Palette.ink,
+                nav.assets,
+                icon,
             ) {
                 filter = id
                 page = 0
@@ -359,14 +378,14 @@ fun buildBoard(root: Container, nav: Navigator) {
         }
         if (pages > 1) {
             val pagerY = 30.0 + PAGE_SIZE * 122.0
-            tray.actionButton("Anterior", 8.0, pagerY, 150.0, 44.0, Palette.brassDim, Palette.paper) {
+            tray.actionButton("Anterior", 8.0, pagerY, 168.0, 48.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.ANTERIOR) {
                 if (page > 0) {
                     page -= 1
                     drawTray()
                 }
             }
             tray.text("${page + 1} / $pages", textSize = 16.0, color = Palette.paper) { position(290.0, pagerY + 12.0) }
-            tray.actionButton("Siguiente", 498.0, pagerY, 150.0, 44.0, Palette.brassDim, Palette.paper) {
+            tray.actionButton("Siguiente", 480.0, pagerY, 176.0, 48.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.SIGUIENTE) {
                 if (page < pages - 1) {
                     page += 1
                     drawTray()
@@ -570,7 +589,7 @@ private fun openPreview(host: Container, nav: Navigator, case: CaseData, node: B
                 y += 12.0
             }
         }
-        actionButton("Cerrar", 0.0, 700.0, 180.0, 48.0, Palette.brassDim, Palette.paper) { dismiss() }
+        actionButton("Cerrar", 0.0, 700.0, 200.0, 52.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.CERRAR) { dismiss() }
     }
 }
 
@@ -624,14 +643,14 @@ private fun openInspector(
             0.0, y, 580.0, 15.0, Palette.ink,
         )
         y += 48.0
-        actionButton("Hipótesis", 0.0, y, 190.0, 48.0, Palette.brass, Palette.ink) {
-            host.noteEditor("Hipótesis de la ficha", "Solo se guarda en esta ficha.", note, allowPin = false) { written, _ ->
+        actionButton("Hipótesis", 0.0, y, 200.0, 52.0, Palette.brass, Palette.ink, nav.assets, ButtonIcons.HIPOTESIS) {
+            host.noteEditor("Hipótesis de la ficha", "Solo se guarda en esta ficha.", note, allowPin = false, assets = nav.assets) { written, _ ->
                 engine.setNodeNote(node.id, written)
                 dismiss()
                 onChanged()
             }
         }
-        actionButton("Abrir origen", 210.0, y, 200.0, 48.0, Palette.greenFelt, Palette.paper) {
+        actionButton("Abrir origen", 210.0, y, 220.0, 52.0, Palette.greenFelt, Palette.paper, nav.assets, ButtonIcons.ORIGEN) {
             dismiss()
             when (node.type) {
                 "suspect" -> nav.push(Route.Interview(node.entityId))
@@ -645,7 +664,7 @@ private fun openInspector(
                 }
             }
         }
-        actionButton("Quitar", 430.0, y, 160.0, 48.0, Palette.wax, Palette.paper) {
+        actionButton("Quitar", 440.0, y, 170.0, 52.0, Palette.wax, Palette.paper, nav.assets, ButtonIcons.QUITAR) {
             engine.removeNode(node.id)
             dismiss()
             onChanged()

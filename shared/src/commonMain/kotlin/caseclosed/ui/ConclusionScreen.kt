@@ -1,5 +1,6 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.data.CaseCatalog
 import caseclosed.model.Verdict
 import korlibs.image.color.Colors
@@ -94,13 +95,15 @@ fun buildConclusion(root: Container, nav: Navigator) {
         y + 20.0
     }
 
-    root.actionButton("Presentar acusación", 24.0, Desk.H - 110.0, 672.0, 72.0, Palette.wax, Palette.paper) {
+    root.actionButton("Presentar acusación", 24.0, Desk.H - 110.0, 672.0, 72.0, Palette.wax, Palette.paper, nav.assets, ButtonIcons.ACUSAR) {
         val suspectId = accused[0]
         if (suspectId == null) {
             root.confirmDialog(
                 "Sin nombre en el expediente",
                 "Elige a la persona que acusas antes de enviar esto arriba.",
                 "Volver",
+                nav.assets,
+                ButtonIcons.VOLVER,
             ) {}
             return@actionButton
         }
@@ -109,6 +112,8 @@ fun buildConclusion(root: Container, nav: Navigator) {
             "¿Estás seguro?",
             "¿Archivar esta acusación contra $name? Un nombre equivocado queda en tu expediente. Si el jefe la rechaza, el tablero se queda como está.",
             "Presentar",
+            nav.assets,
+            ButtonIcons.ACUSAR,
         ) {
             val verdict = engine.evaluate(suspectId, picked)
             presentVerdict(root, nav, verdict)
@@ -155,10 +160,12 @@ private fun presentVerdict(root: Container, nav: Navigator, verdict: Verdict) {
             if (solved) "Volver al escritorio" else "Seguir investigando",
             0.0,
             buttonY,
-            420.0,
-            60.0,
+            460.0,
+            64.0,
             if (solved) Palette.greenFelt else Palette.brassDim,
             Palette.paper,
+            nav.assets,
+            if (solved) ButtonIcons.VOLVER else ButtonIcons.SEGUIR,
         ) {
             dismiss()
             if (solved) nav.go(Route.Desk) else nav.pop()
