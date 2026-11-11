@@ -129,13 +129,14 @@ class GameEngine(
 
     /**
      * Throws away the active case's investigation and lays out the authored starting state again.
-     * Solved and unlocked cases stay as they are.
+     * This case opens once more. Other solved cases stay solved.
      */
     fun restartCase() {
         val caseId = state.progression.activeCaseId
         val fresh = CaseCatalog.freshState(CaseCatalog.require(caseId))
         val progression = state.progression.copy(
             startedCaseIds = (state.progression.startedCaseIds + caseId).distinct(),
+            completedCaseIds = state.progression.completedCaseIds.filter { it != caseId },
         )
         state = state.copy(
             progression = progression,

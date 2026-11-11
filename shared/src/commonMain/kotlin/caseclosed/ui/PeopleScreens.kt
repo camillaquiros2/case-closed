@@ -1,15 +1,24 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.model.Item
 import caseclosed.model.Question
 import caseclosed.model.Suspect
+import korlibs.image.bitmap.Bitmap
 import korlibs.image.color.Colors
 import korlibs.korge.input.onClick
 import korlibs.korge.view.Container
+import korlibs.korge.view.addUpdater
 import korlibs.korge.view.container
+import korlibs.korge.view.fixedSizeContainer
+import korlibs.korge.view.image
 import korlibs.korge.view.position
+import korlibs.korge.view.scale
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
+import korlibs.math.geom.Size
+import kotlin.math.max
+import kotlin.time.DurationUnit
 
 fun buildSuspects(root: Container, nav: Navigator) {
     val case = nav.engine.activeCase()
@@ -45,207 +54,289 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
     val engine = nav.engine
     val case = engine.activeCase()
     val suspect = case.suspects.first { it.id == suspectId }
-    val state = engine.investigation()
-    val interview = state.interviews[suspectId]
+    var note = engine.investigation().suspectNotes[suspectId].orEmpty()
+    val dialogueTop = Desk.H - 320.0
+
+    val railW = 104.0
     root.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
+    root.portraitPlate(
+        nav.assets.get(suspect.portrait),
+        0.0,
+        Desk.HEADER,
+        Desk.W - railW,
+        dialogueTop - Desk.HEADER,
+    )
+    root.solidRect(railW, dialogueTop - Desk.HEADER, Palette.mahogany) {
+        position(Desk.W - railW, Desk.HEADER)
+    }
+    root.solidRect(3.0, dialogueTop - Desk.HEADER, Palette.brass) {
+        position(Desk.W - railW, Desk.HEADER)
+    }
     root.chrome(suspect.alias, suspect.name, nav, true)
-    root.scrollBox(20.0, Desk.HEADER + 8.0, 680.0, Desk.H - Desk.HEADER - 20.0, 0.0, onScroll = {}) {
-        var y = 8.0
-        val portrait = container { position(16.0, y) }
-        portrait.photo(nav.assets.get(suspect.portrait), 180.0, 180.0, suspect.name, Palette.dossier)
-        text(suspect.name, textSize = 26.0, color = Palette.paper) { position(214.0, y + 8.0) }
-        text(suspect.occupation, textSize = 16.0, color = Palette.brass) { position(214.0, y + 46.0) }
-        y += 196.0
-        text("Expediente", textSize = 18.0, color = Palette.brass) { position(8.0, y) }
-        y += 28.0
-        y += blockText(suspect.shortDescription, 8.0, y, 640.0, 18.0, Palette.paper)
-        y += 12.0
-        text("Conocido", textSize = 16.0, color = Palette.brass) { position(8.0, y) }
-        y += 24.0
-        y += blockText(suspect.knownInformation, 8.0, y, 640.0, 17.0, Palette.paper)
-        y += 12.0
-        text("Coartada", textSize = 16.0, color = Palette.brass) { position(8.0, y) }
-        y += 24.0
-        y += blockText(suspect.alibi, 8.0, y, 640.0, 17.0, Palette.paper)
-        y += 16.0
-        val note = state.suspectNotes[suspectId].orEmpty()
-        text("Notas del detective", textSize = 16.0, color = Palette.brass) { position(8.0, y) }
-        y += 24.0
-        y += blockText(if (note.isBlank()) "Sin notas." else note, 8.0, y, 640.0, 17.0, Palette.paper)
-        y += 8.0
-        val notesY = y
-        solidRect(280.0, 48.0, Palette.brass) { position(8.0, notesY) }
-        text("Editar notas", textSize = 18.0, color = Palette.ink) { position(24.0, notesY + 13.0) }
-        solidRect(280.0, 48.0, Colors.WHITE) {
-            position(8.0, notesY)
-            alpha = 0.01
-            onClick {
-                root.noteEditor("Notas sobre ${suspect.name}", "Quedan en el expediente de este sospechoso.", note, allowPin = false) { written, _ ->
-                    engine.setSuspectNote(suspectId, written)
-                    nav.refresh()
+
+    val dialogue = root.container { position(24.0, dialogueTop) }
+    dialogue.solidRect(672.0, 296.0, Palette.brass)
+    dialogue.solidRect(660.0, 284.0, Palette.paper) { position(6.0, 6.0) }
+    dialogue.text(suspect.name, textSize = 22.0, color = Palette.wax) { position(22.0, 18.0) }
+    val questionLine = dialogue.text("", textSize = 15.0, color = Palette.brassDim) { position(22.0, 52.0) }
+    val typed = dialogue.container { position(22.0, 84.0) }
+    var full = ""
+    var shown = 0
+    var running = false
+    var speaking: Question? = null
+
+    fun paint() {
+        typed.clearChildren()
+        typed.blockText(full.take(shown), 0.0, 0.0, 620.0, 20.0, Palette.ink)
+    }
+
+    val cue = dialogue.text("seguir ▸", textSize = 16.0, color = Palette.brassDim) {
+        position(548.0, 250.0)
+        visible = false
+    }
+    var boardEnabled = false
+    var boardIcon: Container? = null
+    var boardCaption: korlibs.korge.view.Text? = null
+
+    fun refreshPin() {
+        val question = speaking
+        val pinned = question != null && engine.isPinned("highlight", "hl_q_${question.id}")
+        boardEnabled = !running && question != null && !pinned
+        boardIcon?.alpha = if (!running && question != null) 1.0 else 0.38
+        boardCaption?.text = if (pinned) "En el tablero" else "Al tablero"
+        cue.visible = running
+    }
+
+    fun present(text: String, question: Question?, instant: Boolean) {
+        full = text
+        speaking = question
+        questionLine.text = if (question == null) "" else clipText(question.question, 78)
+        shown = if (instant) full.length else 0
+        running = shown < full.length
+        paint()
+        refreshPin()
+    }
+
+    var carry = 0.0
+    dialogue.solidRect(660.0, 284.0, Colors.WHITE) {
+        position(6.0, 6.0)
+        alpha = 0.01
+        onClick {
+            if (running) {
+                shown = full.length
+                running = false
+                carry = 0.0
+                paint()
+                refreshPin()
+            }
+        }
+    }
+
+    dialogue.addUpdater { dt ->
+        if (!running) return@addUpdater
+        carry += dt.toDouble(DurationUnit.SECONDS) * 42.0
+        val step = carry.toInt()
+        if (step <= 0) return@addUpdater
+        carry -= step
+        shown = (shown + step).coerceAtMost(full.length)
+        paint()
+        if (shown >= full.length) {
+            running = false
+            carry = 0.0
+            refreshPin()
+        }
+    }
+
+    val lastId = engine.investigation().interviews[suspectId]
+        ?.conversationOrder
+        ?.maxByOrNull { it.timestamp }
+        ?.questionId
+    val last = suspect.questions.firstOrNull { it.id == lastId }
+    if (last != null) {
+        present(last.answer, last, instant = true)
+    } else {
+        present("Puede preguntar.", null, instant = false)
+    }
+
+    val railX = Desk.W - railW + 20.0
+    fun slot(index: Int) = Desk.HEADER + 36.0 + index * 118.0
+    root.interviewIcon(railX, slot(0), nav.assets, ButtonIcons.HIPOTESIS) {
+        root.questionDialog(
+            nav,
+            suspect,
+            onAsk = { question ->
+                engine.askQuestion(suspectId, question)
+                present(question.answer, question, instant = false)
+            },
+            onReplay = { question -> present(question.answer, question, instant = false) },
+        )
+    }
+    root.text("Preguntas", textSize = 13.0, color = Palette.paper) { position(railX - 2.0, slot(0) + 68.0) }
+    root.interviewIcon(railX, slot(1), nav.assets, ButtonIcons.NOTAS) {
+        root.noteEditor(
+            "Notas sobre ${suspect.name}",
+            "Quedan en el expediente de este sospechoso.",
+            note,
+            allowPin = false,
+            assets = nav.assets,
+        ) { written, _ ->
+            engine.setSuspectNote(suspectId, written)
+            note = written
+        }
+    }
+    root.text("Notas", textSize = 13.0, color = Palette.paper) { position(railX + 12.0, slot(1) + 68.0) }
+    boardIcon = root.interviewIcon(railX, slot(2), nav.assets, ButtonIcons.AL_TABLERO) {
+        if (!boardEnabled) return@interviewIcon
+        val question = speaking ?: return@interviewIcon
+        val pinId = "hl_q_${question.id}"
+        engine.saveHighlight(
+            id = pinId,
+            sourceType = "interview",
+            sourceId = suspect.id,
+            sectionId = null,
+            questionId = question.id,
+            text = question.answer,
+            note = "Testimonio",
+        )
+        engine.pin("highlight", pinId, question.answer)
+        refreshPin()
+    }
+    boardCaption = root.text("Al tablero", textSize = 13.0, color = Palette.paper) {
+        position(railX - 6.0, slot(2) + 68.0)
+    }
+    refreshPin()
+}
+
+private fun Container.questionDialog(
+    nav: Navigator,
+    suspect: Suspect,
+    onAsk: (Question) -> Unit,
+    onReplay: (Question) -> Unit,
+) {
+    val engine = nav.engine
+    val asked = engine.investigation().interviews[suspect.id]?.askedQuestionIds?.toSet().orEmpty()
+    val pending = suspect.questions.filter { question ->
+        question.id !in asked && engine.canAskQuestion(suspect.id, question)
+    }
+    val answered = suspect.questions.filter { it.id in asked }
+    var list = if (pending.isEmpty()) 64.0 else 0.0
+    list += pending.sumOf { questionChoiceHeight(it) }
+    if (answered.isNotEmpty()) list += 40.0 + answered.sumOf { questionChoiceHeight(it) }
+    val buttonY = 56.0 + list + 12.0
+    val panelH = (buttonY + 132.0).coerceIn(520.0, 1080.0)
+    overlay(660.0, panelH, dismissOnScrim = true) { dismiss ->
+        text("Preguntas", textSize = 26.0, color = Palette.ink) { position(0.0, 0.0) }
+        var y = 52.0
+        if (pending.isEmpty()) {
+            y += blockText(
+                "Ahora no tiene nada más que decir.",
+                0.0, y, 580.0, 18.0, Palette.inkSoft,
+            )
+            y += 8.0
+        }
+        for (question in pending) {
+            y = questionChoice(question, y) {
+                dismiss()
+                onAsk(question)
+            }
+        }
+        if (answered.isNotEmpty()) {
+            text("Ya respondidas", textSize = 16.0, color = Palette.brassDim) { position(0.0, y) }
+            y += 32.0
+            for (question in answered) {
+                y = questionChoice(question, y) {
+                    dismiss()
+                    onReplay(question)
                 }
             }
         }
-        y += 64.0
-        solidRect(280.0, 48.0, Palette.greenFelt) { position(8.0, y) }
-        text("Fijar al tablero", textSize = 18.0, color = Palette.paper) { position(24.0, y + 13.0) }
-        val pinY = y
-        solidRect(280.0, 48.0, Colors.WHITE) {
-            position(8.0, pinY)
-            alpha = 0.01
-            onClick {
-                engine.pin("suspect", suspect.id, suspect.shortDescription)
+        actionButton(
+            "Reiniciar entrevista",
+            0.0,
+            buttonY,
+            320.0,
+            56.0,
+            Palette.wax,
+            Palette.paper,
+            nav.assets,
+            ButtonIcons.REINICIAR,
+        ) {
+            this@questionDialog.confirmDialog(
+                "¿Reiniciar esta entrevista?",
+                "Esto borra solo las preguntas y respuestas de ${suspect.name}. Las marcas y el tablero se quedan.",
+                "Reiniciar",
+                nav.assets,
+                ButtonIcons.REINICIAR,
+            ) {
+                nav.engine.resetInterview(suspect.id)
+                dismiss()
                 nav.refresh()
             }
         }
-        y += 72.0
-        if (interview?.isSaved == true) {
-            text("Entrevista registrada", textSize = 14.0, color = Palette.gold) { position(8.0, y) }
-            y += 28.0
-        }
-        text("Respuestas", textSize = 20.0, color = Palette.paper) { position(8.0, y) }
-        y += 34.0
-        val turns = interview?.conversationOrder.orEmpty().sortedBy { it.timestamp }
-        if (turns.isEmpty()) {
-            text("Aún no hay preguntas.", textSize = 16.0, color = Palette.paperShade) { position(8.0, y) }
-            y += 32.0
-        }
-        for (turn in turns) {
-            val question = suspect.questions.firstOrNull { it.id == turn.questionId } ?: continue
-            y = answerBlock(this, root, nav, suspect, question, y)
-        }
-        text("Preguntar", textSize = 20.0, color = Palette.paper) { position(8.0, y) }
-        y += 36.0
-        val asked = interview?.askedQuestionIds?.toSet().orEmpty()
-        for (question in suspect.questions) {
-            if (question.id in asked) continue
-            val available = engine.canAskQuestion(
-                suspectId,
-                question,
-            )
-            if (!available) continue
-
-            val rowY = y
-            // Identifica preguntas que requieren descubrimientos.
-            val isUnlockedContent =
-                question.requiredDiscoveryIds.isNotEmpty()
-            // Color especial para las preguntas desbloqueadas.
-            val backgroundColor = if (isUnlockedContent) {
-                Palette.gold
-            } else {
-                Palette.paper
-            }
-            // Fondo de la pregunta.
-            solidRect(640.0, 72.0, backgroundColor) {
-                position(8.0, rowY)
-            }
-            // Texto principal de la pregunta.
-            text(
-                clipText(question.question, 64),
-                textSize = 16.0,
-                color = Palette.ink,
-            ) {
-                position(
-                    20.0,
-                    rowY + if (isUnlockedContent) 12.0 else 24.0
-                )
-            }
-            // Indicador visible de contenido desbloqueado.
-            if (isUnlockedContent) {
-                text(
-                    "★ CONTENIDO DESBLOQUEADO POR PISTAS",
-                    textSize = 12.0,
-                    color = Palette.ink,
-                ) {
-                    position(20.0, rowY + 43.0)
-                }
-            }
-            // Mantiene el comportamiento original del botón.
-            solidRect(640.0, 72.0, Colors.WHITE) {
-                position(8.0, rowY)
-                alpha = 0.01
-                onClick {
-                    engine.askQuestion(suspectId, question)
-                    nav.refresh()
-                }
-            }
-            y += 84.0
-        }
-        y += 8.0
-        solidRect(320.0, 52.0, Palette.wax) { position(8.0, y) }
-        text("Reiniciar entrevista", textSize = 18.0, color = Palette.paper) { position(24.0, y + 14.0) }
-        val resetY = y
-        solidRect(320.0, 52.0, Colors.WHITE) {
-            position(8.0, resetY)
-            alpha = 0.01
-            onClick {
-                root.confirmDialog(
-                    "¿Reiniciar esta entrevista?",
-                    "Esto borra solo las preguntas y respuestas de ${suspect.name}. Las marcas y el tablero se quedan.",
-                    "Reiniciar",
-                ) {
-                    engine.resetInterview(suspectId)
-                    nav.refresh()
-                }
-            }
-        }
-        y + 80.0
     }
 }
 
-private fun answerBlock(
-    content: Container,
-    host: Container,
-    nav: Navigator,
-    suspect: Suspect,
-    question: Question,
-    startY: Double,
-): Double {
-    val engine = nav.engine
-    var y = startY
-    content.text(question.question, textSize = 16.0, color = Palette.brass) { position(8.0, y) }
-    y += 28.0
-    val highlights = engine.investigation().highlights
-    for (sentence in sentencesOf(question.answer)) {
-        val saved = highlights.find { it.sourceId == suspect.id && it.text == sentence }
-        y += content.sentenceBlock(sentence, saved?.note, 640.0, y) {
-            host.noteEditor("Testimonio", sentence, saved?.note ?: "", allowPin = true) { note, pin ->
-                val id = engine.saveHighlight(
-                    id = saved?.id,
-                    sourceType = "interview",
-                    sourceId = suspect.id,
-                    sectionId = null,
-                    questionId = question.id,
-                    text = sentence,
-                    note = note,
-                )
-                if (pin) engine.pin("highlight", id, sentence)
-                nav.refresh()
-            }
-        }
+private fun questionChoiceHeight(question: Question): Double =
+    32.0 + wrapLines(question.question, 560.0, 18.0).size * 24.0
+
+private fun Container.questionChoice(question: Question, y: Double, onPress: () -> Unit): Double {
+    val lines = wrapLines(question.question, 560.0, 18.0)
+    val height = 20.0 + lines.size * 24.0
+    solidRect(600.0, height, Palette.paperShade) { position(0.0, y) }
+    lines.forEachIndexed { index, line ->
+        text(line, textSize = 18.0, color = Palette.ink) { position(16.0, y + 12.0 + index * 24.0) }
     }
-    val pinId = "hl_q_${question.id}"
-    val rowY = y
-    content.solidRect(300.0, 44.0, Palette.gold) { position(8.0, rowY) }
-    content.text("Fijar esta respuesta", textSize = 16.0, color = Palette.ink) { position(20.0, rowY + 12.0) }
-    content.solidRect(300.0, 44.0, Colors.WHITE) {
-        position(8.0, rowY)
+    solidRect(600.0, height, Colors.WHITE) {
+        position(0.0, y)
         alpha = 0.01
-        onClick {
-            engine.saveHighlight(
-                id = pinId,
-                sourceType = "interview",
-                sourceId = suspect.id,
-                sectionId = null,
-                questionId = question.id,
-                text = question.answer,
-                note = highlights.find { it.id == pinId }?.note ?: "Testimonio",
-            )
-            engine.pin("highlight", pinId, question.answer)
-            nav.refresh()
+        onClick { onPress() }
+    }
+    return y + height + 12.0
+}
+
+private fun Container.interviewIcon(
+    x: Double,
+    y: Double,
+    assets: AssetBank,
+    icon: String,
+    onPress: () -> Unit,
+): Container {
+    val size = 64.0
+    val box = container { position(x, y) }
+    box.solidRect(size, size, Palette.brass)
+    box.solidRect(size - 6.0, size - 6.0, Palette.wax) { position(3.0, 3.0) }
+    val bmp = assets.get(icon)
+    if (bmp != null) {
+        val fitted = minOf(44.0 / bmp.width, 44.0 / bmp.height)
+        box.image(bmp) {
+            scale(fitted)
+            position((size - bmp.width * fitted) / 2.0, (size - bmp.height * fitted) / 2.0)
+            mouseEnabled = false
         }
     }
-    return y + 64.0
+    box.solidRect(size, size, Colors.WHITE) {
+        alpha = 0.01
+        onClick { onPress() }
+    }
+    return box
+}
+
+private fun Container.portraitPlate(bmp: Bitmap?, x: Double, y: Double, w: Double, h: Double) {
+    fixedSizeContainer(Size(w, h), clip = true) {
+        position(x, y)
+        if (bmp == null) {
+            solidRect(w, h, Palette.dossier)
+            return@fixedSizeContainer
+        }
+        val fitted = max(w / bmp.width, h / bmp.height)
+        image(bmp) {
+            scale(fitted)
+            val dw = bmp.width * fitted
+            val dh = bmp.height * fitted
+            position((w - dw) / 2.0, (h - dh) * 0.12)
+            mouseEnabled = false
+        }
+    }
 }
 
 fun buildItems(root: Container, nav: Navigator) {
@@ -335,14 +426,14 @@ fun buildItemDetail(root: Container, nav: Navigator, itemId: String) {
         y += 24.0
         y += blockText(if (note.isBlank()) "Sin notas." else note, 8.0, y, 640.0, 17.0, Palette.paper)
         y += 10.0
-        buttonRow(this, y, "Editar notas", Palette.brass, Palette.ink) {
-            root.noteEditor("Notas sobre ${item.name}", item.shortNotes, note, allowPin = false) { written, _ ->
+        buttonRow(this, y, "Editar notas", nav.assets, ButtonIcons.NOTAS) {
+            root.noteEditor("Notas sobre ${item.name}", item.shortNotes, note, allowPin = false, assets = nav.assets) { written, _ ->
                 engine.setItemNote(itemId, written)
                 nav.refresh()
             }
         }
         y += 64.0
-        buttonRow(this, y, "Fijar al tablero", Palette.greenFelt, Palette.paper) {
+        buttonRow(this, y, "Fijar al tablero", nav.assets, ButtonIcons.FIJAR) {
             engine.pin("item", item.id, item.shortNotes)
             nav.refresh()
         }
@@ -371,15 +462,9 @@ private fun buttonRow(
     content: Container,
     y: Double,
     label: String,
-    fill: RGBAFill,
-    ink: RGBAFill,
+    assets: AssetBank,
+    icon: String,
     onPress: () -> Unit,
 ) {
-    content.solidRect(300.0, 52.0, fill) { position(8.0, y) }
-    content.text(label, textSize = 18.0, color = ink) { position(24.0, y + 14.0) }
-    content.solidRect(300.0, 52.0, Colors.WHITE) {
-        position(8.0, y)
-        alpha = 0.01
-        onClick { onPress() }
-    }
+    content.actionButton(label, 8.0, y, 320.0, 52.0, Palette.wax, Palette.paper, assets, icon, onPress)
 }

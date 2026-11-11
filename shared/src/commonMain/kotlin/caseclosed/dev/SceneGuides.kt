@@ -134,7 +134,7 @@ object SceneGuides {
                 else -> "COLLECT ON SCENE"
             }
             val box = spot.bounds
-            val line = "${index + 1}  ${ascii(name)}  $kind  ${box.x.toInt()},${box.y.toInt()}  ${box.w.toInt()}x${box.h.toInt()}"
+            val line = "${index + 1}  ${ascii(name)}  $kind  ${box.x.toInt()},${box.y.toInt()}  ${box.w.toInt()}x${box.h.toInt()}  ${spot.itemId}.png"
             val color = if (item?.relevant == false) Colors["#C8C8C8"] else regionColor(index)
             bmp.drawText(MAP_X, lineY, line, color, scale = 2)
             lineY += 26

@@ -1,6 +1,8 @@
 package caseclosed.ui
 
+import caseclosed.data.ButtonIcons
 import caseclosed.model.PercentBox
+import korlibs.image.bitmap.Bitmap
 import korlibs.image.color.Colors
 import korlibs.korge.input.onClick
 import korlibs.korge.view.Container
@@ -11,6 +13,7 @@ import korlibs.korge.view.position
 import korlibs.korge.view.scale
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
+import kotlin.math.min
 
 private val hotspotTints = listOf(
     Palette.highlight,
@@ -63,7 +66,7 @@ fun buildSceneMap(root: Container, nav: Navigator, sceneId: String) {
     root.chrome(clipText(scene.name, 22), "Toca una parte de la sala", nav, true)
     root.drawPlate(nav, scene.image, mapFrame)
     scene.subscenes.forEachIndexed { index, sub ->
-        root.hotspot(mapFrame, sub.bounds, hotspotTints[index % hotspotTints.size], sub.name) {
+        root.hotspot(mapFrame, sub.bounds, hotspotTints[index % hotspotTints.size], sub.name, null) {
             nav.push(Route.SceneCloseup(scene.id, sub.id))
         }
     }
@@ -96,7 +99,13 @@ fun buildSceneCloseup(root: Container, nav: Navigator, sceneId: String, subScene
     }
     sub.items.forEachIndexed { index, spot ->
         val item = case.items.firstOrNull { it.id == spot.itemId } ?: return@forEachIndexed
-        root.hotspot(mapFrame, spot.bounds, hotspotTints[index % hotspotTints.size], item.name) {
+        root.hotspot(
+            mapFrame,
+            spot.bounds,
+            hotspotTints[index % hotspotTints.size],
+            item.name,
+            nav.assets.get(spot.image),
+        ) {
             nav.push(Route.SceneFind(scene.id, sub.id, item.id))
         }
     }
@@ -144,7 +153,7 @@ fun buildSceneFind(
         root.solidRect(656.0, 64.0, Palette.greenFelt) { position(32.0, barY) }
         root.text("Ya enviado al escritorio", textSize = 20.0, color = Palette.paper) { position(48.0, barY + 18.0) }
     } else {
-        root.actionButton("Enviar al escritorio", 32.0, barY, 656.0, 64.0, Palette.brass, Palette.ink) {
+        root.actionButton("Enviar al escritorio", 32.0, barY, 656.0, 64.0, Palette.brass, Palette.ink, nav.assets, ButtonIcons.ENVIAR) {
             engine.discoverItem(item.id)
             nav.banner = "${item.name} está en el escritorio."
             nav.refresh()
@@ -188,17 +197,30 @@ private fun Container.hotspot(
     box: PercentBox,
     tint: RGBAFill,
     label: String,
+    sprite: Bitmap?,
     onPress: () -> Unit,
 ) {
     val x = frame.x + frame.w * box.x / 100.0
     val y = frame.y + frame.h * box.y / 100.0
     val w = (frame.w * box.w / 100.0).coerceAtLeast(28.0)
     val h = (frame.h * box.h / 100.0).coerceAtLeast(28.0)
-    solidRect(w, h, tint) {
-        position(x, y)
-        alpha = 0.2
+    if (sprite != null) {
+        val bw = sprite.width.toDouble().coerceAtLeast(1.0)
+        val bh = sprite.height.toDouble().coerceAtLeast(1.0)
+        val fitted = min(w / bw, h / bh)
+        val dw = bw * fitted
+        val dh = bh * fitted
+        image(sprite) {
+            position(x + (w - dw) / 2.0, y + (h - dh) / 2.0)
+            scale(fitted)
+        }
+    } else {
+        solidRect(w, h, tint) {
+            position(x, y)
+            alpha = 0.2
+        }
+        solidRect(w, 3.0, Palette.paper) { position(x, y) }
     }
-    solidRect(w, 3.0, Palette.paper) { position(x, y) }
     val plateW = (label.length * 8.5 + 16.0).coerceAtMost(w - 8.0).coerceAtLeast(28.0)
     solidRect(plateW, 22.0, Palette.mahoganyDeep) {
         position(x + 4.0, y + 6.0)

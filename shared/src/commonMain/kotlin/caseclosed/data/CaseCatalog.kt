@@ -8,6 +8,22 @@ import caseclosed.model.ItemOrigin
 import caseclosed.model.PercentBox
 
 /**
+ * Transparent PNGs that sit on the detective's desk.
+ * Drop each file in `composeResources/files/images/desk/`.
+ */
+object DeskImages {
+    const val PHONE = "images/desk/phone.png"
+    const val FOLDER = "images/desk/folder.png"
+    const val SUSPECTS = "images/desk/suspects.png"
+    const val LOCKER = "images/desk/locker.png"
+    const val NOTEBOOK = "images/desk/notebook.png"
+    const val BOARD = "images/desk/board.png"
+    const val ACCUSATION = "images/desk/accusation.png"
+
+    val all = listOf(PHONE, FOLDER, SUSPECTS, LOCKER, NOTEBOOK, BOARD, ACCUSATION)
+}
+
+/**
  * Every playable case. Add a new file, then append the pack here.
  * The desk, board, and indictment screens only read this list.
  */
@@ -43,6 +59,8 @@ object CaseCatalog {
             "images/desk/desk_wood_bg.png",
             "images/desk/cork_texture.png",
         )
+        paths += DeskImages.all
+        paths += ButtonIcons.all
         for (pack in packs) {
             val case = pack.data
             for (file in case.files) {
@@ -55,7 +73,10 @@ object CaseCatalog {
             for (item in case.items) if (item.image.isNotBlank()) paths += item.image
             for (scene in case.scenes) {
                 if (scene.image.isNotBlank()) paths += scene.image
-                for (sub in scene.subscenes) if (sub.image.isNotBlank()) paths += sub.image
+                for (sub in scene.subscenes) {
+                    if (sub.image.isNotBlank()) paths += sub.image
+                    for (spot in sub.items) if (spot.image.isNotBlank()) paths += spot.image
+                }
             }
         }
         return paths.toList()
@@ -147,6 +168,8 @@ object CaseCatalog {
                     require(spot.itemId !in placed) { "${spot.itemId} is placed twice" }
                     placed += spot.itemId
                     requireBox(spot.bounds, spot.itemId)
+                    val cutout = sceneItemPng(case.id, scene.id, sub.id, spot.itemId)
+                    require(spot.image == cutout) { "${spot.itemId} cutout must be $cutout" }
                 }
             }
         }
