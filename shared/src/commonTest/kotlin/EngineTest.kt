@@ -1,12 +1,14 @@
 package caseclosed
 
 import caseclosed.data.CaseCatalog
+import caseclosed.data.DeskImages
 import caseclosed.engine.GameEngine
 import caseclosed.engine.GameSaves
 import caseclosed.model.CaseInvestigationState
 import caseclosed.model.ClueKind
 import caseclosed.model.GlobalProgression
 import caseclosed.model.Verdict
+import caseclosed.ui.sentencesOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -142,6 +144,17 @@ class EngineTest {
         assertTrue(engine.isCompleted("case_001"))
         assertEquals("case_002", engine.progression.activeCaseId)
         assertTrue(engine.investigation().boardNodes.isEmpty())
+    }
+
+    @Test
+    fun mainMenuCoverIsLoadedAndEveryCaseHasAnIntro() {
+        assertTrue(DeskImages.MENU_BACKGROUND in CaseCatalog.imagePaths())
+        for (pack in CaseCatalog.packs) {
+            assertTrue(
+                sentencesOf(pack.data.briefing).isNotEmpty(),
+                "${pack.data.id} needs a briefing for its intro",
+            )
+        }
     }
 }
 

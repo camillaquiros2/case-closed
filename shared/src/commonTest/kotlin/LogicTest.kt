@@ -61,7 +61,7 @@ class LogicTest {
     @Test
     fun aNewCaseStartsWithOnlyTheFileEvidence() {
         val blackwood = CaseCatalog.freshState(CaseCatalog.require("case_001"))
-        assertEquals(listOf("item_brandy", "item_pillbox"), blackwood.discoveredItemIds)
+        assertEquals(listOf("item_brandy", "item_pillbox", "item_vial"), blackwood.discoveredItemIds)
         val lamp = CaseCatalog.require("case_001").data.items.first { it.id == "item_lamp" }
         assertEquals(ItemOrigin.SCENE, lamp.origin)
         assertTrue(!lamp.relevant)

@@ -11,6 +11,8 @@ import korlibs.time.DateTime
 
 sealed class Route {
     data object Title : Route()
+    data object Tutorial : Route()
+    data object CaseIntro : Route()
     data object Desk : Route()
     data object Phone : Route()
     data object Files : Route()
@@ -32,6 +34,8 @@ class Navigator(
     private val root: Container,
     val engine: GameEngine,
     val assets: AssetBank,
+    /** Closes the app. Null on web, so the menu hides Exit. */
+    val onExit: (() -> Unit)? = null,
 ) {
     private val stack = ArrayDeque<Route>()
     private var layer: Container? = null
@@ -160,6 +164,8 @@ class Navigator(
         layer = next
         when (val route = stack.last()) {
             Route.Title -> buildTitle(next, this)
+            Route.Tutorial -> buildTutorial(next, this)
+            Route.CaseIntro -> buildCaseIntro(next, this)
             Route.Desk -> buildDesk(next, this)
             Route.Phone -> buildPhone(next, this)
             Route.Files -> buildFiles(next, this)

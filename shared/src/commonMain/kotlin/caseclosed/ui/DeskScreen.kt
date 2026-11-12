@@ -33,7 +33,8 @@ fun buildDesk(root: Container, nav: Navigator) {
     weather.behind(root)
     root.solidRect(Desk.W, 132.0, Palette.mahoganyDeep) { alpha = 0.92 }
     root.solidRect(Desk.W, 5.0, Palette.brass) { position(0.0, 127.0) }
-    root.text(case.caseNumber, textSize = 14.0, color = Palette.brass) { position(28.0, 16.0) }
+    root.text("${case.caseNumber}  ·  ${GameText.VIEW_STORY}", textSize = 14.0, color = Palette.brass) { position(28.0, 16.0) }
+    root.container().hitRect(Desk.W - 190.0, 127.0) { nav.push(Route.CaseIntro) }
     root.text(clipText(case.title, 32), textSize = 28.0, color = Palette.paper) { position(28.0, 40.0) }
     root.text("${case.location}  ·  ${case.date}", textSize = 15.0, color = Palette.paperShade) { position(28.0, 82.0) }
     if (engine.isCompleted(case.id)) {
