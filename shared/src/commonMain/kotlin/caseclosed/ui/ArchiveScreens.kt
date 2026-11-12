@@ -13,6 +13,8 @@ import korlibs.korge.view.rotation
 import korlibs.korge.view.solidRect
 import korlibs.korge.view.text
 import korlibs.math.geom.degrees
+import korlibs.korge.view.addUpdater
+import kotlin.time.DurationUnit
 
 fun buildPhone(root: Container, nav: Navigator) {
     val engine = nav.engine
@@ -67,9 +69,37 @@ private fun fileCard(parent: Container, file: CaseFile, y: Double, nav: Navigato
     card.text(file.title, textSize = 22.0, color = Palette.ink) { position(152.0, 18.0) }
     card.text("${file.documentNumber}   ${file.date}", textSize = 14.0, color = Palette.inkSoft) { position(152.0, 52.0) }
     card.blockText(file.shortDescription, 152.0, 78.0, 470.0, 16.0, Palette.ink)
+    var opening = false
+
     card.solidRect(650.0, h, Colors.WHITE) {
         alpha = 0.01
-        onClick { nav.push(Route.Document(file.id)) }
+
+        onClick {
+            if (opening) return@onClick
+
+            opening = true
+
+            var elapsed = 0.0
+            var navigated = false
+
+            card.addUpdater { dt ->
+
+                elapsed = (elapsed + dt.toDouble(DurationUnit.SECONDS))
+                    .coerceAtMost(0.16)
+
+                val progress = elapsed / 0.16
+
+                card.y = y - (8.0 * progress)
+
+                if (progress >= 1.0 && !navigated) {
+                    navigated = true
+
+                    nav.post {
+                        nav.push(Route.Document(file.id))
+                    }
+                }
+            }
+        }
     }
     return h + 16.0
 }
@@ -90,6 +120,7 @@ fun buildDocument(root: Container, nav: Navigator, fileId: String) {
         initial = engine.investigation().documentScrollPositions[fileId] ?: 0.0,
         onScroll = { engine.setScroll(fileId, it) },
     ) {
+        this.fadeIn(0.32)
         renderDossier(root, this, nav, file)
     }
     // Rebind the up/down hits. The buttons above have empty handlers; add real ones on top.

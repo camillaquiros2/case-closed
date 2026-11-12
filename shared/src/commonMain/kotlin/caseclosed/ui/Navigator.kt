@@ -176,6 +176,7 @@ class Navigator(
             is Route.SceneFind -> buildSceneFind(next, this, route.sceneId, route.subSceneId, route.itemId)
             Route.Clues -> buildClueLog(next, this)
         }
+        next.fadeIn(0.18)
         showUnlockedQuestionNotice(next)
     }
 }
