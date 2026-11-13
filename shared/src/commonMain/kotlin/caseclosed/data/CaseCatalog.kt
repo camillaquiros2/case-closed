@@ -20,7 +20,10 @@ object DeskImages {
     const val BOARD = "images/desk/board.png"
     const val ACCUSATION = "images/desk/accusation.png"
 
-    val all = listOf(PHONE, FOLDER, SUSPECTS, LOCKER, NOTEBOOK, BOARD, ACCUSATION)
+    /** Main menu cover. Not tied to any case. Portrait, about 1080 × 1920. */
+    const val MENU_BACKGROUND = "images/ui/menu_bg.png"
+
+    val all = listOf(PHONE, FOLDER, SUSPECTS, LOCKER, NOTEBOOK, BOARD, ACCUSATION, MENU_BACKGROUND)
 }
 
 /**

@@ -20,7 +20,8 @@ import korlibs.math.geom.ScaleMode
 import korlibs.math.geom.Size
 import korlibs.time.DateTime
 
-suspend fun launchCaseClosedGame() {
+/** [onExit] closes the app on this platform. Leave it null where the game can't close itself (web). */
+suspend fun launchCaseClosedGame(onExit: (() -> Unit)? = null) {
     Korge(
         title = GameText.WINDOW_TITLE,
         windowSize = Size(405, 720),
@@ -29,11 +30,11 @@ suspend fun launchCaseClosedGame() {
         scaleMode = ScaleMode.SHOW_ALL,
     ) {
         val sceneContainer = sceneContainer()
-        sceneContainer.changeTo { GameScene() }
+        sceneContainer.changeTo { GameScene(onExit) }
     }
 }
 
-class GameScene : Scene() {
+class GameScene(private val onExit: (() -> Unit)? = null) : Scene() {
     override suspend fun SContainer.sceneMain() {
         CaseCatalog.validate()
         SceneGuides.writeIfEnabled()
@@ -42,6 +43,6 @@ class GameScene : Scene() {
         assets.preload(CaseCatalog.imagePaths())
         val engine = GameEngine(NativeGameSaves(views.storage), now = { DateTime.now().unixMillisLong })
         engine.load()
-        Navigator(this, engine, assets).start(Route.Title)
+        Navigator(this, engine, assets, onExit).start(Route.Title)
     }
 }

@@ -1,3 +1,5 @@
 package com.caseclosed.deskdetective
 
-suspend fun main() = launchCaseClosedGame()
+import kotlin.system.exitProcess
+
+suspend fun main() = launchCaseClosedGame(onExit = { exitProcess(0) })

@@ -4,6 +4,6 @@ import korlibs.render.KorgwActivity
 
 open class CaseClosedActivity : KorgwActivity() {
     override suspend fun activityMain() {
-        launchCaseClosedGame()
+        launchCaseClosedGame(onExit = { runOnUiThread { finish() } })
     }
 }
