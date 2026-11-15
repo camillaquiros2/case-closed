@@ -31,6 +31,7 @@ import kotlin.math.atan2
 import kotlin.math.hypot
 import kotlin.math.min
 import kotlin.time.DurationUnit
+import korlibs.korge.view.alpha
 
 class AssetBank(private val vfs: VfsFile? = null) {
     private val cache = mutableMapOf<String, Bitmap?>()
@@ -68,6 +69,43 @@ class Scroller(
 
 fun Container.clearChildren() {
     while (numChildren > 0) getChildAt(0).removeFromParent()
+}
+
+fun Container.fadeIn(durationSeconds: Double = 0.24) {
+    val duration = durationSeconds.coerceAtLeast(0.01)
+    var elapsed = 0.0
+
+    alpha = 0.0
+
+    addUpdater { dt ->
+        elapsed = (elapsed + dt.toDouble(DurationUnit.SECONDS))
+            .coerceAtMost(duration)
+
+        alpha = (elapsed / duration).coerceIn(0.0, 1.0)
+    }
+}
+
+fun Container.slideFadeIn(
+    fromY: Double = 18.0,
+    durationSeconds: Double = 0.28,
+) {
+    val duration = durationSeconds.coerceAtLeast(0.01)
+    val targetY = y
+    var elapsed = 0.0
+
+    alpha = 0.0
+    y = targetY + fromY
+
+    addUpdater { dt ->
+        elapsed = (elapsed + dt.toDouble(DurationUnit.SECONDS))
+            .coerceAtMost(duration)
+
+        val progress = (elapsed / duration).coerceIn(0.0, 1.0)
+        val eased = progress * progress * (3.0 - 2.0 * progress)
+
+        y = targetY + fromY * (1.0 - eased)
+        alpha = eased
+    }
 }
 
 fun Container.framedRect(w: Double, h: Double, fill: RGBAFill, frame: RGBAFill = Palette.brass) {
@@ -221,18 +259,95 @@ fun Container.scrollBox(
     return scroller
 }
 
+
 fun Container.chrome(title: String, subtitle: String, nav: Navigator, back: Boolean) {
+
+    // Fondo del encabezado
     solidRect(Desk.W, Desk.HEADER, Palette.mahoganyDeep)
-    solidRect(Desk.W, 5.0, Palette.brass) { position(0.0, Desk.HEADER - 5.0) }
-    text(clipText(subtitle, 48), textSize = 14.0, color = Palette.brass) { position(24.0, 18.0) }
-    text(clipText(title, 28), textSize = 30.0, color = Palette.paper) { position(24.0, 46.0) }
+
+    // Marco dorado exterior
+    solidRect(Desk.W - 16.0, 2.0, Palette.brass) {
+        position(8.0, 7.0)
+    }
+    solidRect(Desk.W - 16.0, 2.0, Palette.brass) {
+        position(8.0, Desk.HEADER - 9.0)
+    }
+    solidRect(2.0, Desk.HEADER - 16.0, Palette.brass) {
+        position(8.0, 8.0)
+    }
+    solidRect(2.0, Desk.HEADER - 16.0, Palette.brass) {
+        position(Desk.W - 10.0, 8.0)
+    }
+
+    // Subtítulo
+    text(
+        clipText(subtitle, 35),
+        textSize = 14.0,
+        color = Palette.brass
+    ) {
+        position(48.0, 17.0)
+        mouseEnabled = false
+    }
+
+    // Icono y línea divisoria vertical
+    buttonLogo(
+        nav.assets,
+        ButtonIcons.CASOS,
+        36.0,
+        43.0,
+        34.0
+    )
+
+    solidRect(2.0, 40.0, Palette.brass) {
+        position(76.0, 40.0)
+    }
+
+    // Título principal
+    text(
+        clipText(title, 27),
+        textSize = 30.0,
+        color = Palette.paper
+    ) {
+        position(88.0, 42.0)
+        mouseEnabled = false
+    }
+
+    // Línea izquierda (longitud exacta de 95.0)
+    solidRect(95.0, 2.0, Palette.gold) {
+        position(27.0, 87.0)
+        mouseEnabled = false
+    }
+
+    // Rombo central perfectamente centrado (alineado al eje Y de las líneas)
+    solidRect(6.0, 6.0, Palette.gold) {
+        position(124.0, 85.0)
+        rotation = 45.degrees
+        mouseEnabled = false
+    }
+
+    // Línea derecha (longitud exacta de 95.0, simétrica a la izquierda)
+    solidRect(95.0, 2.0, Palette.gold) {
+        position(130.0, 87.0)
+        mouseEnabled = false
+    }
+
+    // Botón de Volver opcional
     if (back && nav.canPop()) {
-        actionButton("Volver", Desk.W - 168.0, 36.0, 140.0, 56.0, Palette.brassDim, Palette.paper, nav.assets, ButtonIcons.VOLVER) {
+        actionButton(
+            "Volver",
+            Desk.W - 168.0,
+            36.0,
+            140.0,
+            56.0,
+            Palette.brassDim,
+            Palette.paper,
+            nav.assets,
+            ButtonIcons.VOLVER
+        ) {
             nav.pop()
         }
     }
 }
-
 fun Container.woodBackground(assets: AssetBank) {
     val bmp = assets.get("images/desk/desk_wood_bg.png")
     if (bmp != null) {
