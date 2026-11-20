@@ -35,6 +35,7 @@ import kotlin.math.hypot
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sin
+import korlibs.image.color.RGBA
 
 private enum class SceneTab { PLACE, LINKS, FILES, NOTES }
 
@@ -509,36 +510,81 @@ private fun Container.drawSheet(
         }
         ObjectFocus.LINKS -> Unit
         ObjectFocus.FILES -> {
-            sheet.optionRow(nav.assets, ButtonIcons.VOLVER, "Volver", 10.0, 180.0) { onFocus(ObjectFocus.MENU) }
+
+            val vinoOscuro = RGBA(84, 27, 28, 255)
+            val dorado = RGBA(181, 138, 76, 255)
+            val papelClaro = RGBA(230, 210, 164, 255)
+            val sombraOscura = RGBA(41, 22, 15, 255)
+
+            sheet.optionRow(
+                nav.assets,
+                ButtonIcons.VOLVER,
+                "Volver",
+                10.0,
+                180.0
+            ) {
+                onFocus(ObjectFocus.MENU)
+            }
+
             val titleX = 200.0
             val titleY = 10.0
             val titleW = width - 280.0
             val titleH = 54.0
-            sheet.solidRect(titleW, titleH, Palette.panelShadow) {
+
+            sheet.solidRect(titleW, titleH, sombraOscura) {
                 position(titleX + 2.0, titleY + 3.0)
                 alpha = 0.35
                 mouseEnabled = false
             }
-            sheet.solidRect(titleW, titleH, Palette.brassDim) {
+
+            sheet.solidRect(titleW, titleH, dorado) {
                 position(titleX, titleY)
                 mouseEnabled = false
             }
-            sheet.solidRect(titleW - 4.0, titleH - 4.0, Palette.paperShade) {
+            sheet.solidRect(titleW - 4.0, titleH - 4.0, vinoOscuro) {
                 position(titleX + 2.0, titleY + 2.0)
                 mouseEnabled = false
             }
-            sheet.text("Expedientes", textSize = 22.0, color = Palette.ink) {
-                position(titleX + 16.0, titleY + 16.0)
+            sheet.text(
+                "ARCHIVO DE INVESTIGACIÓN",
+                textSize = 13.0,
+                color = papelClaro
+            ) {
+                position(titleX + 18.0, titleY + 7.0)
                 mouseEnabled = false
             }
+            sheet.text(
+                "Expedientes",
+                textSize = 22.0,
+                color = papelClaro
+            ) {
+                position(titleX + 18.0, titleY + 25.0)
+                mouseEnabled = false
+            }
+
             val files = filesFor(case, item)
-            sheet.scrollBox(16.0, 70.0, width - 32.0, sheetH - 90.0, 0.0, onScroll = {}) {
+
+            sheet.scrollBox(
+                16.0,
+                70.0,
+                width - 32.0,
+                sheetH - 90.0,
+                0.0,
+                onScroll = {}
+            ) {
                 var y = 4.0
+
                 if (files.isEmpty()) {
-                    y += blockText("Sin expedientes.", 0.0, y, width - 48.0, 16.0, Palette.inkSoft)
+                    y += blockText(
+                        "Sin expedientes.",
+                        0.0,
+                        y,
+                        width - 48.0,
+                        16.0,
+                        Palette.inkSoft
+                    )
                 }
                 for (file in files) {
-
                     val row = y
                     val rowW = width - 48.0
                     val titleLines = wrapLines(
@@ -546,66 +592,44 @@ private fun Container.drawSheet(
                         rowW - 76.0,
                         16.0
                     )
-
                     val rowH = maxOf(
                         64.0,
                         titleLines.size * 20.5 + 20.0
                     )
-                    solidRect(
-                        rowW,
-                        rowH,
-                        Palette.mahoganyDeep
-                    ) {
+
+                    solidRect(rowW, rowH, Palette.mahoganyDeep) {
                         position(3.0, row + 4.0)
                         alpha = 0.35
                         mouseEnabled = false
                     }
-                    solidRect(
-                        rowW,
-                        rowH,
-                        Palette.brassDim
-                    ) {
+                    solidRect(rowW, rowH, Palette.brassDim) {
                         position(0.0, row)
                         mouseEnabled = false
                     }
-                    solidRect(
-                        rowW - 6.0,
-                        rowH - 6.0,
-                        Palette.brass
-                    ) {
+                    solidRect(rowW - 6.0, rowH - 6.0, Palette.brass) {
                         position(3.0, row + 3.0)
                         mouseEnabled = false
                     }
-                    solidRect(
-                        rowW - 12.0,
-                        rowH - 12.0,
-                        Palette.paperShade
-                    ) {
+                    solidRect(rowW - 12.0, rowH - 12.0, Palette.paperShade) {
                         position(6.0, row + 6.0)
                         mouseEnabled = false
                     }
-                    solidRect(
-                        4.0,
-                        rowH - 12.0,
-                        Palette.gold
-                    ) {
+                    solidRect(4.0, rowH - 12.0, Palette.gold) {
                         position(6.0, row + 6.0)
                         mouseEnabled = false
                     }
-                    solidRect(
-                        36.0,
-                        42.0,
-                        Palette.brassDim
-                    ) {
-                        position(16.0, row + (rowH - 42.0) / 2.0)
+                    solidRect(36.0, 42.0, Palette.brassDim) {
+                        position(
+                            16.0,
+                            row + (rowH - 42.0) / 2.0
+                        )
                         mouseEnabled = false
                     }
-                    solidRect(
-                        30.0,
-                        36.0,
-                        Palette.paper
-                    ) {
-                        position(19.0, row + (rowH - 36.0) / 2.0)
+                    solidRect(30.0, 36.0, Palette.paper) {
+                        position(
+                            19.0,
+                            row + (rowH - 36.0) / 2.0
+                        )
                         mouseEnabled = false
                     }
                     blockText(
@@ -616,11 +640,7 @@ private fun Container.drawSheet(
                         16.0,
                         Palette.ink
                     )
-                    solidRect(
-                        rowW,
-                        rowH,
-                        Colors.WHITE
-                    ) {
+                    solidRect(rowW, rowH, Colors.WHITE) {
                         position(0.0, row)
                         alpha = 0.01
                         onClick {
