@@ -178,6 +178,8 @@ data class GlobalProgression(
     val completedCaseIds: List<String> = emptyList(),
     /** Cases opened from the title screen. Their investigation is kept, not rebuilt. */
     val startedCaseIds: List<String> = emptyList(),
+    /** True once the tutorial was finished or skipped. After that it only opens from the menu. */
+    val tutorialSeen: Boolean = false,
 )
 
 @Serializable

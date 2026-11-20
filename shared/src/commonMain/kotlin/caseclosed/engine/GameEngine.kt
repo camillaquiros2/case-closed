@@ -147,6 +147,19 @@ class GameEngine(
         saves.saveProgress(progression)
     }
 
+    fun isTutorialSeen(): Boolean = progression.tutorialSeen
+
+    /**
+     * Records that the player finished or skipped the tutorial, so it is not offered again on launch.
+     * Only the progression changes. Investigations stay as they are.
+     */
+    fun markTutorialSeen() {
+        if (progression.tutorialSeen) return
+        val updated = progression.copy(tutorialSeen = true)
+        state = state.copy(progression = updated)
+        saves.saveProgress(updated)
+    }
+
     fun markMessagesRead() {
         val ids = activeCase().phoneMessages.map { it.id }
         edit { InvestigationRules.markMessagesRead(it, ids) }
