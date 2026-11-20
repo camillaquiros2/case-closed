@@ -43,6 +43,8 @@ class GameScene(private val onExit: (() -> Unit)? = null) : Scene() {
         assets.preload(CaseCatalog.imagePaths())
         val engine = GameEngine(NativeGameSaves(views.storage), now = { DateTime.now().unixMillisLong })
         engine.load()
-        Navigator(this, engine, assets, onExit).start(Route.Title)
+        val nav = Navigator(this, engine, assets, onExit)
+        nav.start(Route.Title)
+        if (!engine.isTutorialSeen()) nav.push(Route.Tutorial)
     }
 }

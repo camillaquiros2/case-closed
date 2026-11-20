@@ -2,6 +2,7 @@ package caseclosed
 
 import caseclosed.data.CaseCatalog
 import caseclosed.data.DeskImages
+import caseclosed.data.TutorialSteps
 import caseclosed.engine.GameEngine
 import caseclosed.engine.GameSaves
 import caseclosed.model.CaseInvestigationState
@@ -154,6 +155,41 @@ class EngineTest {
                 sentencesOf(pack.data.briefing).isNotEmpty(),
                 "${pack.data.id} needs a briefing for its intro",
             )
+        }
+    }
+
+    @Test
+    fun tutorialIsOfferedOnceAndLeavesTheCaseAlone() {
+        val saves = MemoryGameSaves()
+        val engine = GameEngine(saves, now = { 50L })
+        engine.load()
+        assertFalse(engine.isTutorialSeen())
+
+        engine.startCase()
+        engine.pin("item", "item_vial", "The vial")
+        val before = engine.investigation()
+
+        engine.markTutorialSeen()
+        engine.markTutorialSeen()
+
+        assertTrue(engine.isTutorialSeen())
+        assertTrue(engine.isStarted())
+        assertEquals(before, engine.investigation())
+
+        val reloaded = GameEngine(saves, now = { 50L })
+        reloaded.load()
+        assertTrue(reloaded.isTutorialSeen())
+        assertEquals(before, reloaded.investigation())
+    }
+
+    @Test
+    fun everyTutorialStepFitsOnScreenAndItsImageIsLoaded() {
+        val loaded = CaseCatalog.imagePaths()
+        assertTrue(TutorialSteps.all.isNotEmpty())
+        for (step in TutorialSteps.all) {
+            assertTrue(step.title.isNotBlank())
+            assertTrue(step.body.length <= TutorialSteps.MAX_BODY, "\"${step.title}\" is too long to fit without scrolling")
+            step.images.forEach { assertTrue(it in loaded, "$it is not preloaded") }
         }
     }
 }
