@@ -13,13 +13,28 @@ object Palette {
     val mahogany = Colors["#3B2214"]
     val mahoganyDeep = Colors["#2A160C"]
     val grain = Colors["#2E1C10"]
+
+    // Dorados y latones
     val brass = Colors["#C4A35A"]
     val brassDim = Colors["#8C6B2F"]
+    val brassLight = Colors["#D9BC79"]
+
+    // Papeles
     val paper = Colors["#F3E6C8"]
     val paperShade = Colors["#E7D3A8"]
+    val paperEdge = Colors["#D6BF91"]
+
+    // Iluminación
     val highlight = Colors["#E6C35C"]
+    val goldGlow = Colors["#F3CB63"]
+
+    // Sombras y superficies
+    val panelShadow = Colors["#160B07"]
+    val mahoganyLight = Colors["#4A2B1B"]
+
     val ink = Colors["#1C140E"]
     val inkSoft = Colors["#5C4636"]
+
     val manila = Colors["#C4A06A"]
     val cork = Colors["#8D6244"]
     val corkDark = Colors["#6E4A32"]

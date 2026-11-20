@@ -245,7 +245,7 @@ private fun Container.drawPlace(
     }
     val canSend = selected != null && selected.origin == ItemOrigin.SCENE &&
         selected.id !in nav.engine.investigation().discoveredItemIds
-    val menuH = if (canSend) 250.0 else 188.0
+    val menuH = if (canSend) 364.0 else 288.0
     val sheetH = when {
         selected == null -> 0.0
         focus == ObjectFocus.FILES -> 480.0
@@ -371,20 +371,137 @@ private fun Container.drawSheet(
 ) {
     val sheet = container { position(16.0, sheetY) }
     val width = Desk.W - 32.0
-    sheet.solidRect(width, sheetH, Palette.brass)
-    sheet.solidRect(width - 12.0, sheetH - 12.0, Palette.paper) { position(6.0, 6.0) }
+    sheet.solidRect(
+        width,
+        sheetH,
+        Palette.panelShadow
+    ) {
+        position(5.0, 8.0)
+        alpha = 0.55
+    }
+    sheet.solidRect(
+        width,
+        sheetH,
+        Palette.brassDim
+    )
+    sheet.solidRect(
+        width - 8.0,
+        sheetH - 8.0,
+        Palette.brass
+    ) {
+        position(4.0, 4.0)
+    }
+    sheet.solidRect(
+        width - 16.0,
+        sheetH - 16.0,
+        Palette.paper
+    ) {
+        position(8.0, 8.0)
+    }
     sheet.iconButton(nav.assets, ButtonIcons.CERRAR, width - 60.0, 12.0, 40.0, false, onClose)
     when (focus) {
         ObjectFocus.MENU -> {
-            sheet.text(clipText(item.name, 26), textSize = 22.0, color = Palette.ink) { position(18.0, 18.0) }
-            sheet.optionRow(nav.assets, ButtonIcons.ENLAZAR, "Ver conexiones", 68.0, width - 36.0) {
+
+            // Miniatura del objeto
+            val preview = nav.assets.get(item.image)
+
+            sheet.solidRect(
+                72.0,
+                72.0,
+                Palette.brassDim
+            ) {
+                position(18.0, 16.0)
+            }
+
+            sheet.solidRect(
+                64.0,
+                64.0,
+                Palette.paperShade
+            ) {
+                position(22.0, 20.0)
+            }
+
+            if (preview != null) {
+
+                val fitted = min(
+                    64.0 / preview.width.toDouble(),
+                    64.0 / preview.height.toDouble()
+                )
+
+                sheet.image(preview) {
+                    position(
+                        22.0 + (64.0 - preview.width * fitted) / 2.0,
+                        20.0 + (64.0 - preview.height * fitted) / 2.0
+                    )
+
+                    scale(fitted)
+                    mouseEnabled = false
+                }
+            }
+            sheet.text(
+                clipText(item.name, 50),
+                textSize = 22.0,
+                color = Palette.ink
+            ) {
+                position(104.0, 18.0)
+            }
+
+            // Categoría
+            val category = if (item.origin == ItemOrigin.SCENE) {
+                "EVIDENCIA DE ESCENA"
+            } else {
+                "EVIDENCIA REGISTRADA"
+            }
+
+            sheet.text(
+                category,
+                textSize = 12.0,
+                color = Palette.brassDim
+            ) {
+                position(104.0, 50.0)
+            }
+            sheet.solidRect(
+                width - 36.0,
+                2.0,
+                Palette.brassDim
+            ) {
+                position(18.0, 98.0)
+            }
+            sheet.blockText(
+                clipText(item.description, 200),
+                18.0,
+                110.0,
+                width - 48.0,
+                14.0,
+                Palette.inkSoft
+            )
+            sheet.optionRow(
+                nav.assets,
+                ButtonIcons.ENLAZAR,
+                "Ver conexiones",
+                160.0,
+                width - 36.0
+            ) {
                 onFocus(ObjectFocus.LINKS)
             }
-            sheet.optionRow(nav.assets, ButtonIcons.ABRIR, "Ver expedientes", 132.0, width - 36.0) {
+            sheet.optionRow(
+                nav.assets,
+                ButtonIcons.ABRIR,
+                "Ver expedientes",
+                224.0,
+                width - 36.0
+            ) {
                 onFocus(ObjectFocus.FILES)
             }
             if (canSend) {
-                sheet.optionRow(nav.assets, ButtonIcons.ENVIAR, "Al escritorio", 196.0, width - 36.0) {
+
+                sheet.optionRow(
+                    nav.assets,
+                    ButtonIcons.ENVIAR,
+                    "Al escritorio",
+                    288.0,
+                    width - 36.0
+                ) {
                     nav.engine.discoverItem(item.id)
                     onRefresh()
                 }
@@ -393,7 +510,27 @@ private fun Container.drawSheet(
         ObjectFocus.LINKS -> Unit
         ObjectFocus.FILES -> {
             sheet.optionRow(nav.assets, ButtonIcons.VOLVER, "Volver", 10.0, 180.0) { onFocus(ObjectFocus.MENU) }
-            sheet.text("Expedientes", textSize = 22.0, color = Palette.ink) { position(200.0, 20.0) }
+            val titleX = 200.0
+            val titleY = 10.0
+            val titleW = width - 280.0
+            val titleH = 54.0
+            sheet.solidRect(titleW, titleH, Palette.panelShadow) {
+                position(titleX + 2.0, titleY + 3.0)
+                alpha = 0.35
+                mouseEnabled = false
+            }
+            sheet.solidRect(titleW, titleH, Palette.brassDim) {
+                position(titleX, titleY)
+                mouseEnabled = false
+            }
+            sheet.solidRect(titleW - 4.0, titleH - 4.0, Palette.paperShade) {
+                position(titleX + 2.0, titleY + 2.0)
+                mouseEnabled = false
+            }
+            sheet.text("Expedientes", textSize = 22.0, color = Palette.ink) {
+                position(titleX + 16.0, titleY + 16.0)
+                mouseEnabled = false
+            }
             val files = filesFor(case, item)
             sheet.scrollBox(16.0, 70.0, width - 32.0, sheetH - 90.0, 0.0, onScroll = {}) {
                 var y = 4.0
@@ -401,15 +538,96 @@ private fun Container.drawSheet(
                     y += blockText("Sin expedientes.", 0.0, y, width - 48.0, 16.0, Palette.inkSoft)
                 }
                 for (file in files) {
+
                     val row = y
-                    solidRect(width - 48.0, 64.0, Palette.paperShade) { position(0.0, row) }
-                    text(clipText(file.title, 36), textSize = 18.0, color = Palette.ink) { position(16.0, row + 20.0) }
-                    solidRect(width - 48.0, 64.0, Colors.WHITE) {
+                    val rowW = width - 48.0
+                    val titleLines = wrapLines(
+                        file.title,
+                        rowW - 76.0,
+                        16.0
+                    )
+
+                    val rowH = maxOf(
+                        64.0,
+                        titleLines.size * 20.5 + 20.0
+                    )
+                    solidRect(
+                        rowW,
+                        rowH,
+                        Palette.mahoganyDeep
+                    ) {
+                        position(3.0, row + 4.0)
+                        alpha = 0.35
+                        mouseEnabled = false
+                    }
+                    solidRect(
+                        rowW,
+                        rowH,
+                        Palette.brassDim
+                    ) {
+                        position(0.0, row)
+                        mouseEnabled = false
+                    }
+                    solidRect(
+                        rowW - 6.0,
+                        rowH - 6.0,
+                        Palette.brass
+                    ) {
+                        position(3.0, row + 3.0)
+                        mouseEnabled = false
+                    }
+                    solidRect(
+                        rowW - 12.0,
+                        rowH - 12.0,
+                        Palette.paperShade
+                    ) {
+                        position(6.0, row + 6.0)
+                        mouseEnabled = false
+                    }
+                    solidRect(
+                        4.0,
+                        rowH - 12.0,
+                        Palette.gold
+                    ) {
+                        position(6.0, row + 6.0)
+                        mouseEnabled = false
+                    }
+                    solidRect(
+                        36.0,
+                        42.0,
+                        Palette.brassDim
+                    ) {
+                        position(16.0, row + (rowH - 42.0) / 2.0)
+                        mouseEnabled = false
+                    }
+                    solidRect(
+                        30.0,
+                        36.0,
+                        Palette.paper
+                    ) {
+                        position(19.0, row + (rowH - 36.0) / 2.0)
+                        mouseEnabled = false
+                    }
+                    blockText(
+                        file.title,
+                        62.0,
+                        row + (rowH - titleLines.size * 20.5) / 2.0,
+                        rowW - 82.0,
+                        16.0,
+                        Palette.ink
+                    )
+                    solidRect(
+                        rowW,
+                        rowH,
+                        Colors.WHITE
+                    ) {
                         position(0.0, row)
                         alpha = 0.01
-                        onClick { nav.push(Route.Document(file.id)) }
+                        onClick {
+                            nav.push(Route.Document(file.id))
+                        }
                     }
-                    y += 74.0
+                    y += rowH + 10.0
                 }
                 y
             }
@@ -1125,9 +1343,33 @@ private fun Container.hotspot(
 ) {
     val rect = rectOf(frame, box)
     if (selected) {
-        solidRect(rect.w, rect.h, Palette.gold) {
+        solidRect(
+            rect.w + 14.0,
+            rect.h + 14.0,
+            Palette.goldGlow
+        ) {
+            position(rect.x - 7.0, rect.y - 7.0)
+            alpha = 0.14
+            mouseEnabled = false
+        }
+        solidRect(
+            rect.w + 6.0,
+            rect.h + 6.0,
+            Palette.gold
+        ) {
+            position(rect.x - 3.0, rect.y - 3.0)
+            alpha = 0.26
+            mouseEnabled = false
+        }
+
+        // Resaltado interior
+        solidRect(
+            rect.w,
+            rect.h,
+            Palette.gold
+        ) {
             position(rect.x, rect.y)
-            alpha = 0.22
+            alpha = 0.08
             mouseEnabled = false
         }
     }
@@ -1143,9 +1385,33 @@ private fun Container.hotspot(
             mouseEnabled = false
         }
     }
-    solidRect((label.length * 8.0 + 16.0).coerceAtMost(rect.w).coerceAtLeast(36.0), 22.0, Palette.mahoganyDeep) {
+    val labelW = (label.length * 8.0 + 16.0)
+        .coerceAtMost(rect.w)
+        .coerceAtLeast(36.0)
+    solidRect(
+        labelW + 4.0,
+        26.0,
+        Palette.brassDim
+    ) {
+        position(rect.x - 2.0, rect.y - 2.0)
+        alpha = 0.95
+        mouseEnabled = false
+    }
+    solidRect(
+        labelW,
+        22.0,
+        Palette.mahoganyDeep
+    ) {
         position(rect.x, rect.y)
-        alpha = 0.72
+        alpha = 0.96
+        mouseEnabled = false
+    }
+    solidRect(
+        3.0,
+        22.0,
+        Palette.gold
+    ) {
+        position(rect.x, rect.y)
         mouseEnabled = false
     }
     text(clipText(label, 18), textSize = 13.0, color = Palette.paper) {
@@ -1165,32 +1431,70 @@ private fun Container.hotspot(
     }
 }
 
-private fun Container.drawPlate(nav: Navigator, imagePath: String, slot: MapFrame): MapFrame {
-    solidRect(slot.w + 8.0, slot.h + 8.0, Palette.brass) {
-        position(slot.x - 4.0, slot.y - 4.0)
+private fun Container.drawPlate(
+    nav: Navigator,
+    imagePath: String,
+    slot: MapFrame
+): MapFrame {
+    solidRect(
+        slot.w + 18.0,
+        slot.h + 18.0,
+        Palette.panelShadow
+    ) {
+        position(slot.x - 9.0, slot.y - 9.0)
+        alpha = 0.65
         mouseEnabled = false
     }
+    solidRect(
+        slot.w + 12.0,
+        slot.h + 12.0,
+        Palette.brassDim
+    ) {
+        position(slot.x - 6.0, slot.y - 6.0)
+        mouseEnabled = false
+    }
+    solidRect(
+        slot.w + 6.0,
+        slot.h + 6.0,
+        Palette.brassLight
+    ) {
+        position(slot.x - 3.0, slot.y - 3.0)
+        mouseEnabled = false
+    }
+    solidRect(
+        slot.w,
+        slot.h,
+        Palette.corkDark
+    ) {
+        position(slot.x, slot.y)
+        mouseEnabled = false
+    }
+
     val bmp = nav.assets.get(imagePath)
+
     if (bmp == null) {
-        solidRect(slot.w, slot.h, Palette.corkDark) {
-            position(slot.x, slot.y)
-            mouseEnabled = false
-        }
         return slot
     }
-    val fitted = min(slot.w / bmp.width.toDouble(), slot.h / bmp.height.toDouble())
+
+    val fitted = min(
+        slot.w / bmp.width.toDouble(),
+        slot.h / bmp.height.toDouble()
+    )
+
     val dw = bmp.width * fitted
     val dh = bmp.height * fitted
+
     val x = slot.x + (slot.w - dw) / 2.0
     val y = slot.y + (slot.h - dh) / 2.0
+
     image(bmp) {
         position(x, y)
         scale(fitted)
         mouseEnabled = false
     }
+
     return MapFrame(x, y, dw, dh)
 }
-
 private fun rectOf(frame: MapFrame, box: PercentBox): MapFrame {
     val w = (frame.w * box.w / 100.0).coerceAtLeast(36.0)
     val h = (frame.h * box.h / 100.0).coerceAtLeast(36.0)
