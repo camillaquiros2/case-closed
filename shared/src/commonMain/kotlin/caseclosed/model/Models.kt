@@ -196,6 +196,8 @@ data class BoardConnection(
     val id: String,
     val fromNodeId: String,
     val toNodeId: String,
+    /** hilo, pertenece, contiene, menciona, refuerza */
+    val label: String = "hilo",
 )
 
 @Serializable

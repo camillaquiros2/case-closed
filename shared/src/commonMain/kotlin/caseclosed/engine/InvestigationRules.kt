@@ -226,14 +226,29 @@ internal object InvestigationRules {
         id: String,
         fromNodeId: String,
         toNodeId: String,
+        label: String = "hilo",
     ): CaseInvestigationState {
         if (fromNodeId == toNodeId) return current
         val exists = current.boardConnections.any { connection ->
             setOf(connection.fromNodeId, connection.toNodeId) == setOf(fromNodeId, toNodeId)
         }
-        if (exists) return current
+        if (exists) return relabel(current, fromNodeId, toNodeId, label)
         return current.copy(
-            boardConnections = current.boardConnections + BoardConnection(id, fromNodeId, toNodeId),
+            boardConnections = current.boardConnections + BoardConnection(id, fromNodeId, toNodeId, label),
+        )
+    }
+
+    fun relabel(
+        current: CaseInvestigationState,
+        fromNodeId: String,
+        toNodeId: String,
+        label: String,
+    ): CaseInvestigationState {
+        val pair = setOf(fromNodeId, toNodeId)
+        return current.copy(
+            boardConnections = current.boardConnections.map { connection ->
+                if (setOf(connection.fromNodeId, connection.toNodeId) == pair) connection.copy(label = label) else connection
+            },
         )
     }
 

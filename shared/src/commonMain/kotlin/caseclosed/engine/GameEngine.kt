@@ -236,14 +236,10 @@ class GameEngine(
         edit { InvestigationRules.removeNode(it, nodeId) }
     }
 
-    fun connect(fromNodeId: String, toNodeId: String) {
+    fun connect(fromNodeId: String, toNodeId: String, label: String = "hilo") {
         if (fromNodeId == toNodeId) return
-        val already = investigation().boardConnections.any { connection ->
-            setOf(connection.fromNodeId, connection.toNodeId) == setOf(fromNodeId, toNodeId)
-        }
-        if (already) return
         val id = ids.next("conn")
-        edit { InvestigationRules.connect(it, id, fromNodeId, toNodeId) }
+        edit { InvestigationRules.connect(it, id, fromNodeId, toNodeId, label) }
     }
 
     fun removeConnection(connectionId: String) {
