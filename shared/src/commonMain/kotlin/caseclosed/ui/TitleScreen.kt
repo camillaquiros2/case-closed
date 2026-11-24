@@ -23,7 +23,9 @@ object GameText {
     const val MENU_CONTINUE = "Continuar"
     const val MENU_TUTORIAL = "Tutorial"
     const val MENU_EXIT = "Salir"
-    const val TUTORIAL_SOON = "El tutorial llega pronto."
+    const val TUTORIAL_SUBTITLE = "Cómo se juega"
+    const val TUTORIAL_BACK = "Anterior"
+    const val TUTORIAL_DONE = "Entendido"
     const val INTRO_NEXT = "Siguiente"
     const val INTRO_SKIP = "Saltar"
     const val INTRO_TO_DESK = "Ir al escritorio"
@@ -54,6 +56,8 @@ object GameText {
 
     fun restartWarning(caseNumber: String): String =
         "Esto borra el tablero, las notas, las marcas, las entrevistas y las pruebas halladas de $caseNumber. El caso vuelve a abrirse. Los otros casos resueltos siguen resueltos."
+
+    fun tutorialStep(current: Int, total: Int): String = "Paso $current de $total"
 
     fun clueCount(count: Int): String = "$count pistas"
 
@@ -170,6 +174,7 @@ private fun Container.centeredText(line: String, y: Double, size: Double, color:
     text(line, textSize = size, color = color).also { view ->
         val measured = view.width.toDouble()
         val used = if (measured > 1.0) measured else line.length * size * 0.52
-        view.position((Desk.W - used) / 2.0, y)
+        view.position((Desk.W - used)
+            / 2.0, y)
         view.mouseEnabled = false
     }
