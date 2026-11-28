@@ -229,6 +229,60 @@ data class InterviewState(
 )
 
 @Serializable
+enum class ReferenceType {
+    PERSON,
+    OBJECT,
+    DOCUMENT,
+}
+
+/** Which face of the scene's bottom panel is open. Not stored: choosing an object returns to the description. */
+enum class InspectionPanelMode {
+    DESCRIPTION,
+    CONVERSATION,
+    DOCUMENTS,
+    MENTAL_NOTES,
+}
+
+@Serializable
+data class HighlightRange(
+    val start: Int,
+    val endExclusive: Int,
+)
+
+@Serializable
+data class DocumentConnection(
+    val id: String,
+    val documentId: String,
+    val fragment: String,
+    /** Words the player marked inside [fragment]. Offsets are into that phrase. */
+    val highlights: List<HighlightRange> = emptyList(),
+)
+
+@Serializable
+data class FiledTestimony(
+    val id: String,
+    val suspectId: String,
+    val questionId: String,
+)
+
+@Serializable
+data class MentalNote(
+    val id: String,
+    val referenceType: ReferenceType,
+    val referenceId: String,
+    val text: String,
+    val highlights: List<HighlightRange> = emptyList(),
+)
+
+/** What the player has chosen to remember about one scene object. Nothing here is authored or inferred. */
+@Serializable
+data class ObjectMemory(
+    val objectId: String,
+    val documents: List<DocumentConnection> = emptyList(),
+    val notes: List<MentalNote> = emptyList(),
+)
+
+@Serializable
 data class CaseInvestigationState(
     val boardNodes: List<BoardNode> = emptyList(),
     val boardConnections: List<BoardConnection> = emptyList(),
@@ -240,6 +294,10 @@ data class CaseInvestigationState(
     val documentScrollPositions: Map<String, Double> = emptyMap(),
     /** Message ids the detective has already opened. Authored `unread` flags live on the case data. */
     val readMessageIds: List<String> = emptyList(),
+    /** Player memory keyed by item id. Old saves omit the field and load as empty. */
+    val objectMemories: Map<String, ObjectMemory> = emptyMap(),
+    /** Answers the player sent from an interview into the accusation. */
+    val filedTestimonies: List<FiledTestimony> = emptyList(),
 )
 
 sealed class Verdict {

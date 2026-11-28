@@ -4,6 +4,7 @@ import caseclosed.data.ButtonIcons
 import caseclosed.model.CaseData
 import caseclosed.model.CaseInvestigationState
 import caseclosed.model.CrimeScene
+import caseclosed.model.InspectionPanelMode
 import caseclosed.model.Item
 import caseclosed.model.ItemOrigin
 import caseclosed.model.PercentBox
@@ -149,13 +150,13 @@ private fun mountScene(
     val case = nav.engine.activeCase()
     val screen = root.container()
     var selectedId = initialItemId
-    var focus = ObjectFocus.MENU
-    var selectedLink: String? = null
-    var slideLinks = false
+    var mode = InspectionPanelMode.DESCRIPTION
+    var talkTo: String? = null
+    var animatePanel = initialItemId != null
 
     fun redraw() {
-        val slide = slideLinks
-        slideLinks = false
+        val animate = animatePanel
+        animatePanel = false
         screen.clearChildren()
         screen.solidRect(Desk.W, Desk.H, Palette.mahoganyDeep)
         val title = sub?.name ?: scene.name
@@ -166,34 +167,53 @@ private fun mountScene(
             Desk.HEADER + 8.0,
             Desk.H - 16.0,
             selectedId,
-            focus,
-            selectedLink,
-            slide,
+            mode,
+            talkTo,
+            animate,
             onSelect = { id ->
-                selectedId = id
-                focus = ObjectFocus.MENU
-                selectedLink = null
+                selectedId = if (selectedId == id) null else id
+                mode = InspectionPanelMode.DESCRIPTION
+                talkTo = null
+                animatePanel = true
                 redraw()
             },
-            onFocus = { next ->
-                slideLinks = next == ObjectFocus.LINKS && focus != ObjectFocus.LINKS
-                if (next != ObjectFocus.LINKS) selectedLink = null
-                focus = next
+            onAsk = { item ->
+                if (mode == InspectionPanelMode.CONVERSATION) {
+                    mode = InspectionPanelMode.DESCRIPTION
+                    animatePanel = true
+                    redraw()
+                } else {
+                    root.askAboutObject(nav, case, item) { suspectId ->
+                        talkTo = suspectId
+                        mode = InspectionPanelMode.CONVERSATION
+                        animatePanel = true
+                        redraw()
+                    }
+                }
+            },
+            onDocuments = {
+                mode = if (mode == InspectionPanelMode.DOCUMENTS) {
+                    InspectionPanelMode.DESCRIPTION
+                } else {
+                    InspectionPanelMode.DOCUMENTS
+                }
+                animatePanel = true
                 redraw()
             },
-            onPickLink = { id ->
-                selectedLink = if (selectedLink == id) null else id
-                redraw()
-            },
-            onRemoveLink = { id ->
-                nav.engine.removeConnection(id)
-                selectedLink = null
+            onNotes = {
+                mode = if (mode == InspectionPanelMode.MENTAL_NOTES) {
+                    InspectionPanelMode.DESCRIPTION
+                } else {
+                    InspectionPanelMode.MENTAL_NOTES
+                }
+                animatePanel = true
                 redraw()
             },
             onClose = {
                 selectedId = null
-                focus = ObjectFocus.MENU
-                selectedLink = null
+                mode = InspectionPanelMode.DESCRIPTION
+                talkTo = null
+                animatePanel = true
                 redraw()
             },
             onRefresh = { redraw() },
@@ -231,13 +251,13 @@ private fun Container.drawPlace(
     top: Double,
     bottom: Double,
     selectedId: String?,
-    focus: ObjectFocus,
-    selectedLink: String?,
-    slideLinks: Boolean,
+    mode: InspectionPanelMode,
+    talkTo: String?,
+    animate: Boolean,
     onSelect: (String) -> Unit,
-    onFocus: (ObjectFocus) -> Unit,
-    onPickLink: (String) -> Unit,
-    onRemoveLink: (String) -> Unit,
+    onAsk: (Item) -> Unit,
+    onDocuments: () -> Unit,
+    onNotes: () -> Unit,
     onClose: () -> Unit,
     onRefresh: () -> Unit,
 ) {
@@ -246,13 +266,13 @@ private fun Container.drawPlace(
     }
     val canSend = selected != null && selected.origin == ItemOrigin.SCENE &&
         selected.id !in nav.engine.investigation().discoveredItemIds
-    val menuH = if (canSend) 364.0 else 288.0
+    val memory = selected?.let { nav.engine.objectMemory(it.id) }
     val sheetH = when {
-        selected == null -> 0.0
-        focus == ObjectFocus.FILES -> 480.0
-        else -> menuH
+        sub == null -> 0.0
+        selected == null -> 220.0
+        else -> memoryPanelHeight(mode, memory?.documents?.size ?: 0, memory?.notes?.size ?: 0, canSend)
     }
-    val imageBottom = bottom - sheetH - if (selected != null) 8.0 else 0.0
+    val imageBottom = bottom - sheetH - if (sub != null) 8.0 else 0.0
     val slot = MapFrame(16.0, top, Desk.W - 32.0, (imageBottom - top).coerceAtLeast(180.0))
     val frame = drawPlate(nav, if (sub == null) scene.image else sub.image, slot)
     val tip = container { mouseEnabled = false }
@@ -303,28 +323,31 @@ private fun Container.drawPlace(
             if (on) selectedBox = box
         }
         val pickedBox = selectedBox
-        if (selected != null && pickedBox != null && focus != ObjectFocus.LINKS) {
-            drawSheet(
-                host, nav, case, scene, selected, focus, canSend,
-                sheetY = imageBottom + 8.0,
-                sheetH = sheetH,
-                onFocus = onFocus,
-                onClose = onClose,
-                onRefresh = onRefresh,
+        if (selected != null && pickedBox != null) {
+            drawMemoryIcons(
+                nav.assets,
+                frame.x, frame.y, frame.w, frame.h,
+                pickedBox.x, pickedBox.y, pickedBox.w, pickedBox.h,
+                mode,
+                onAsk = { onAsk(selected) },
+                onDocuments = onDocuments,
+                onNotes = onNotes,
             )
         }
     }
-    tip.removeFromParent()
-    addChild(tip)
-    if (sub != null && selected != null && focus == ObjectFocus.LINKS) {
-        drawLinkDialog(
-            host, nav, case, scene, selected, selectedLink, slideLinks,
-            onPick = onPickLink,
-            onRemove = onRemoveLink,
-            onClose = { onFocus(ObjectFocus.MENU) },
+    if (sub != null) {
+        drawMemoryPanel(
+            host, nav, case, sub.name, selected, sub.items.map { it.itemId },
+            mode, talkTo, canSend,
+            sheetY = imageBottom + 8.0,
+            sheetH = sheetH,
+            animate = animate,
+            onClose = onClose,
             onRefresh = onRefresh,
         )
     }
+    tip.removeFromParent()
+    addChild(tip)
 }
 
 private fun Container.lastChild() = if (numChildren > 0) getChildAt(numChildren - 1) else null
@@ -345,7 +368,7 @@ private fun Container.placeActions(
     var y = box.y - 58.0
     if (y < frame.y) y = (box.y + box.h + 6.0).coerceAtMost(frame.y + frame.h - 56.0)
     val noted = nav.engine.investigation().itemNotes[item.id].orEmpty().isNotBlank()
-    iconButton(nav.assets, ButtonIcons.ABRIR, x, y, size, false) { onPage(SheetPage.FILE) }
+    iconButton(nav.assets, ButtonIcons.TAB_EXPEDIENTES, x, y, size, false) { onPage(SheetPage.FILE) }
     iconButton(nav.assets, ButtonIcons.ENLAZAR, x + size + gap, y, size, false, onLink)
     iconButton(nav.assets, ButtonIcons.NOTAS, x + (size + gap) * 2, y, size, noted) {
         val note = nav.engine.investigation().itemNotes[item.id].orEmpty()
@@ -487,7 +510,7 @@ private fun Container.drawSheet(
             }
             sheet.optionRow(
                 nav.assets,
-                ButtonIcons.ABRIR,
+                ButtonIcons.TAB_EXPEDIENTES,
                 "Ver expedientes",
                 224.0,
                 width - 36.0
@@ -698,6 +721,7 @@ private fun objectSpokes(case: CaseData, state: CaseInvestigationState, itemId: 
         val icon = when (other.type) {
             "suspect" -> ButtonIcons.TAB_SOSPECHOSOS
             "item" -> ButtonIcons.TAB_OBJETOS
+            "file" -> ButtonIcons.TAB_EXPEDIENTES
             else -> ButtonIcons.NOTAS
         }
         Spoke(connection.id, connection.label, nodeTitle(case, state, other.type, other.entityId), image, icon)
@@ -1058,7 +1082,7 @@ private fun Container.drawLinks(
         "todos" to ButtonIcons.TAB_TODOS,
         "objetos" to ButtonIcons.TAB_OBJETOS,
         "personas" to ButtonIcons.TAB_SOSPECHOSOS,
-        "expedientes" to ButtonIcons.ABRIR,
+        "expedientes" to ButtonIcons.TAB_EXPEDIENTES,
         "notas" to ButtonIcons.NOTAS,
     )
     filters.forEachIndexed { index, (id, icon) ->
@@ -1147,7 +1171,7 @@ private fun Container.drawFiles(nav: Navigator, case: CaseData, web: SceneWeb, t
             var x = 0.0
             for (node in row) {
                 val file = case.files.firstOrNull { it.id == node.entityId }
-                thumb(nav.assets, file?.thumbnail, ButtonIcons.ABRIR, x, y, size, Palette.brass, file?.title) {
+                thumb(nav.assets, file?.thumbnail, ButtonIcons.TAB_EXPEDIENTES, x, y, size, Palette.brass, file?.title) {
                     if (file != null) nav.push(Route.Document(file.id))
                 }
                 x += size + 16.0
@@ -1537,7 +1561,7 @@ private fun sceneWeb(case: CaseData, state: CaseInvestigationState, scene: Crime
     val nodes = linkedMapOf<String, SceneNode>()
     val edges = mutableListOf<SceneEdge>()
     fun add(node: SceneNode) {
-        nodes.putIfAbsent(node.key, node)
+        if (node.key !in nodes) nodes[node.key] = node
     }
     fun link(from: String, to: String, label: String, connectionId: String? = null) {
         if (from == to) return
@@ -1633,7 +1657,7 @@ private fun Container.iconTabs(nav: Navigator, y: Double, selected: SceneTab, on
     val tabs = listOf(
         SceneTab.PLACE to ButtonIcons.ESCENA,
         SceneTab.LINKS to ButtonIcons.ENLAZAR,
-        SceneTab.FILES to ButtonIcons.ABRIR,
+        SceneTab.FILES to ButtonIcons.TAB_EXPEDIENTES,
         SceneTab.NOTES to ButtonIcons.NOTAS,
     )
     val size = 64.0
@@ -1740,7 +1764,7 @@ private fun relationIcon(label: String): String = when (label.lowercase()) {
     "contiene", "item" -> ButtonIcons.TAB_OBJETOS
     "menciona" -> ButtonIcons.HIPOTESIS
     "refuerza" -> ButtonIcons.FIJAR
-    "expediente", "file" -> ButtonIcons.ABRIR
+    "expediente", "file" -> ButtonIcons.TAB_EXPEDIENTES
     "nota", "note" -> ButtonIcons.NOTAS
     else -> ButtonIcons.ENLAZAR
 }

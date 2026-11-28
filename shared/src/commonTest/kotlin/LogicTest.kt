@@ -2,11 +2,14 @@ package caseclosed
 
 import caseclosed.data.CaseCatalog
 import caseclosed.dev.SceneGuides
+import caseclosed.engine.containsClueKeywords
 import caseclosed.engine.evaluateIndictment
 import caseclosed.model.ItemOrigin
 import caseclosed.model.Verdict
 import caseclosed.ui.Vec
 import caseclosed.ui.Yarn
+import caseclosed.ui.interviewLinkSpans
+import caseclosed.ui.interviewMentions
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -34,6 +37,19 @@ class LogicTest {
         val solution = CaseCatalog.require("case_001").data.solution
         val verdict = evaluateIndictment(solution, "suspect_reid", setOf("item_brandy"))
         assertTrue(verdict is Verdict.Rejected)
+    }
+
+    @Test
+    fun anExtractCountsOnlyWhenItCarriesTheClueWords() {
+        val clue = "El Dr. Reid entró mientras yo salía, con su maletín negro, y dijo que solo tardaría un momento en tomarle el pulso a su señoría."
+        assertTrue(containsClueKeywords(clue, clue))
+        assertTrue(
+            containsClueKeywords(
+                "Serví el brandy. $clue El señor Julian estuvo encerrado.",
+                clue,
+            ),
+        )
+        assertTrue(!containsClueKeywords("El cuerpo estaba desplomado sobre el secante junto a la copa.", clue))
     }
 
     @Test
@@ -82,6 +98,22 @@ class LogicTest {
         assertEquals(expected.r, painted.r)
         assertEquals(expected.g, painted.g)
         assertEquals(expected.b, painted.b)
+    }
+
+    @Test
+    fun anAnswerWordOpensTheObjectThatItNames() {
+        val case = CaseCatalog.require("case_001").data
+        val mentions = interviewMentions(case)
+        val briefcase = "Lo vi entrar mientras yo salía, con su maletín negro."
+        val links = interviewLinkSpans(briefcase, mentions)
+        val vial = links.first { briefcase.substring(it.start, it.endExclusive).contains("maletín") }
+        assertEquals("maletin", vial.target.subSceneId)
+        assertEquals("item_vial", vial.target.itemId)
+        val glass = interviewLinkSpans("Nunca toco su brandy. Quién manipuló la copa.", mentions)
+        assertTrue(glass.all { it.target.itemId == "item_brandy" })
+        val desk = interviewLinkSpans("Dejé la bandeja sobre el escritorio.", mentions)
+        assertEquals("escritorio", desk.single().target.subSceneId)
+        assertEquals(null, desk.single().target.itemId)
     }
 
     @Test

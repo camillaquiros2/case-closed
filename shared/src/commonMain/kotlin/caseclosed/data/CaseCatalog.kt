@@ -63,6 +63,7 @@ object CaseCatalog {
             "images/desk/cork_texture.png",
         )
         paths += DeskImages.all
+        paths += "images/cases/case_001/ending/closing.jpg"
         paths += ButtonIcons.all
         for (pack in packs) {
             val case = pack.data

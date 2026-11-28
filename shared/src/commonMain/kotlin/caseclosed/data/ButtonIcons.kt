@@ -33,7 +33,10 @@ object ButtonIcons {
     const val HIPOTESIS = "$DIR/hipotesis.png"
     const val ORIGEN = "$DIR/origen.png"
     const val NOTAS = "$DIR/notas.png"
+    const val EDITAR = "$DIR/editar.png"
+    const val PREGUNTA = "$DIR/pregunta.png"
     const val TAB_TODOS = "$DIR/tab_todos.png"
+    const val TAB_EXPEDIENTES = "$DIR/tab_expedientes.png"
     const val TAB_SOSPECHOSOS = "$DIR/tab_sospechosos.png"
     const val TAB_OBJETOS = "$DIR/tab_objetos.png"
     const val TAB_CITAS = "$DIR/tab_citas.png"
@@ -44,7 +47,7 @@ object ButtonIcons {
     val all = listOf(
         CASOS, ESCENA, CERRAR, MENU, ENVIAR, EMPEZAR, REANUDAR, REINICIAR, VOLVER,
         GUARDAR, FIJAR, CANCELAR, CONFIRMAR, ACUSAR, SEGUIR, SUBIR, BAJAR, QUITAR,
-        CORTAR, ABRIR, ENLAZAR, ANTERIOR, SIGUIENTE, HIPOTESIS, ORIGEN, NOTAS,
-        TAB_TODOS, TAB_SOSPECHOSOS, TAB_OBJETOS, TAB_CITAS, VER_ORIGEN, AL_TABLERO, ANADIR_TABLERO,
+        CORTAR, ABRIR, ENLAZAR, ANTERIOR, SIGUIENTE, HIPOTESIS, ORIGEN, NOTAS, EDITAR, PREGUNTA,
+        TAB_TODOS, TAB_EXPEDIENTES, TAB_SOSPECHOSOS, TAB_OBJETOS, TAB_CITAS, VER_ORIGEN, AL_TABLERO, ANADIR_TABLERO,
     )
 }

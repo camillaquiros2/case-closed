@@ -448,6 +448,199 @@ fun Container.drawPolyline(points: List<Vec>, color: RGBAFill, thickness: Double
     }
 }
 
+fun Container.penHeading(label: String, x: Double, y: Double, width: Double): Double {
+    text(label, textSize = 22.0, color = Palette.mahoganyDeep) { position(x, y); mouseEnabled = false }
+    val rule = width.coerceIn(90.0, 340.0)
+    solidRect(rule, 2.0, Palette.ink) { position(x, y + 30.0); alpha = 0.4; mouseEnabled = false }
+    solidRect(rule * 0.4, 1.8, Palette.wax) { position(x + 3.0, y + 34.0); alpha = 0.8; mouseEnabled = false }
+    return 48.0
+}
+
+fun inkProseHeight(
+    text: String,
+    width: Double,
+    textSize: Double,
+    marks: List<String> = emptyList(),
+    notes: Map<String, String> = emptyMap(),
+): Double = inkBlockHeight(inkLines(text, width, textSize, marks), width, textSize, notes)
+
+fun Container.annotatedProse(
+    text: String,
+    x: Double,
+    y: Double,
+    width: Double,
+    textSize: Double,
+    marks: List<String> = emptyList(),
+    notes: Map<String, String> = emptyMap(),
+    onSentence: ((String) -> Unit)? = null,
+): Double {
+    val lines = inkLines(text, width, textSize, marks)
+    if (lines.isEmpty()) return 0.0
+    val lineH = textSize * 1.62
+    val glossSize = textSize * 0.78
+    var cy = y
+    for ((index, line) in lines.withIndex()) {
+        var cx = x
+        var ticked = false
+        val gap = textSize * 0.36
+        solidRect(width, 1.0, Palette.paperEdge) {
+            position(x, cy + textSize + 5.0)
+            alpha = 0.85
+            mouseEnabled = false
+        }
+        for (word in line) {
+            val wordW = word.text.length * textSize * 0.52
+            text(word.text, textSize = textSize, color = Palette.ink) {
+                position(cx, cy)
+                mouseEnabled = false
+            }
+            if (word.marked) {
+                val wobble = (word.text.length % 3) - 1.0
+                solidRect(wordW + gap * 0.45, 2.4, Palette.wax) {
+                    position(cx, cy + textSize + 1.0 + wobble)
+                    alpha = 0.82
+                    mouseEnabled = false
+                }
+                if (wordW > 36.0) {
+                    solidRect(wordW * 0.62, 1.5, Palette.wax) {
+                        position(cx + 2.0, cy + textSize + 4.0)
+                        alpha = 0.4
+                        mouseEnabled = false
+                    }
+                }
+                if (!ticked) {
+                    solidRect(12.0, 2.2, Palette.wax) {
+                        anchor(0.0, 0.5)
+                        position(x - 16.0, cy + textSize * 0.55)
+                        rotation = (-16).degrees
+                        alpha = 0.8
+                        mouseEnabled = false
+                    }
+                    ticked = true
+                }
+            }
+            if (onSentence != null) {
+                solidRect(wordW + gap, lineH, Colors.WHITE) {
+                    position(cx, cy - 2.0)
+                    alpha = 0.01
+                    onClick { onSentence(word.sentence) }
+                }
+            }
+            cx += wordW + gap
+        }
+        cy += lineH
+        val next = lines.getOrNull(index + 1)?.firstOrNull()?.sentence
+        for (sentence in sentencesEnding(line, next)) {
+            val gloss = glossOf(sentence, notes) ?: continue
+            val written = wrapLines("— $gloss", width - 10.0, glossSize)
+            for (row in written) {
+                text(row, textSize = glossSize, color = Palette.wax) {
+                    position(x + 10.0, cy)
+                    alpha = 0.9
+                    mouseEnabled = false
+                }
+                cy += glossSize * 1.35
+            }
+            cy += 4.0
+        }
+    }
+    return cy - y
+}
+
+private data class InkWord(val text: String, val marked: Boolean, val sentence: String)
+
+private fun inkLines(text: String, width: Double, textSize: Double, marks: List<String>): List<List<InkWord>> {
+    if (text.isBlank()) return emptyList()
+    val ranges = mutableListOf<IntRange>()
+    for (phrase in marks) {
+        if (phrase.isBlank()) continue
+        var from = 0
+        while (from < text.length) {
+            val at = text.indexOf(phrase, from)
+            if (at < 0) break
+            ranges += at until (at + phrase.length)
+            from = at + phrase.length.coerceAtLeast(1)
+        }
+    }
+    val gap = textSize * 0.36
+    val lines = mutableListOf<List<InkWord>>()
+    var line = mutableListOf<InkWord>()
+    var used = 0.0
+    for (match in Regex("\\S+").findAll(text)) {
+        val sentence = sentenceAt(text, match.range.first)
+        val marked = ranges.any { range -> match.range.first <= range.last && match.range.last >= range.first } ||
+            marks.any { it == sentence }
+        val word = InkWord(match.value, marked, sentence)
+        val w = match.value.length * textSize * 0.52 + gap
+        if (line.isNotEmpty() && used + w > width) {
+            lines += line.toList()
+            line = mutableListOf()
+            used = 0.0
+        }
+        line += word
+        used += w
+    }
+    if (line.isNotEmpty()) lines += line.toList()
+    return lines
+}
+
+private fun sentenceAt(text: String, index: Int): String {
+    var start = 0
+    var i = 0
+    while (i < text.length) {
+        val c = text[i]
+        if (c == '.' || c == '!' || c == '?') {
+            if (index < i + 1) return text.substring(start, i + 1).trim()
+            var next = i + 1
+            while (next < text.length && text[next].isWhitespace()) next++
+            start = next
+            i = next
+            continue
+        }
+        i++
+    }
+    return text.substring(start.coerceAtMost(text.lastIndex.coerceAtLeast(0))).trim()
+}
+
+private fun sentencesEnding(line: List<InkWord>, nextSentence: String?): List<String> {
+    val ended = mutableListOf<String>()
+    var seen = ""
+    for (word in line) {
+        if (word.sentence != seen) {
+            if (seen.isNotEmpty()) ended += seen
+            seen = word.sentence
+        }
+    }
+    if (seen.isNotEmpty() && seen != nextSentence) ended += seen
+    return ended
+}
+
+private fun glossOf(sentence: String, notes: Map<String, String>): String? {
+    notes[sentence]?.takeIf { it.isNotBlank() }?.let { return it }
+    return notes.entries.firstOrNull { it.value.isNotBlank() && it.key.isNotBlank() && it.key in sentence }?.value
+}
+
+private fun inkBlockHeight(
+    lines: List<List<InkWord>>,
+    width: Double,
+    textSize: Double,
+    notes: Map<String, String>,
+): Double {
+    if (lines.isEmpty()) return 0.0
+    val lineH = textSize * 1.62
+    val glossSize = textSize * 0.78
+    var h = 0.0
+    for ((index, line) in lines.withIndex()) {
+        h += lineH
+        val next = lines.getOrNull(index + 1)?.firstOrNull()?.sentence
+        for (sentence in sentencesEnding(line, next)) {
+            val gloss = glossOf(sentence, notes) ?: continue
+            h += wrapLines("— $gloss", width - 10.0, glossSize).size * glossSize * 1.35 + 4.0
+        }
+    }
+    return h
+}
+
 fun Container.sentenceBlock(
     sentence: String,
     note: String?,

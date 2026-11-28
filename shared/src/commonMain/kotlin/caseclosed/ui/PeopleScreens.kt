@@ -1,6 +1,7 @@
 package caseclosed.ui
 
 import caseclosed.data.ButtonIcons
+import caseclosed.model.CaseData
 import caseclosed.model.Item
 import caseclosed.model.Question
 import caseclosed.model.Suspect
@@ -8,6 +9,7 @@ import korlibs.image.bitmap.Bitmap
 import korlibs.image.color.Colors
 import korlibs.korge.input.onClick
 import korlibs.korge.view.Container
+import korlibs.korge.view.alpha
 import korlibs.korge.view.addUpdater
 import korlibs.korge.view.container
 import korlibs.korge.view.fixedSizeContainer
@@ -74,6 +76,7 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
     }
     root.chrome(suspect.alias, suspect.name, nav, true)
 
+    val mentions = interviewMentions(case)
     val dialogue = root.container { position(24.0, dialogueTop) }
     dialogue.solidRect(672.0, 296.0, Palette.brass)
     dialogue.solidRect(660.0, 284.0, Palette.paper) { position(6.0, 6.0) }
@@ -87,7 +90,17 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
 
     fun paint() {
         typed.clearChildren()
-        typed.blockText(full.take(shown), 0.0, 0.0, 620.0, 20.0, Palette.ink)
+        if (shown < full.length) {
+            typed.blockText(full.take(shown), 0.0, 0.0, 620.0, 20.0, Palette.ink)
+        } else {
+            typed.drawLinkedAnswer(full, interviewLinkSpans(full, mentions), 620.0, 20.0) { spot ->
+                if (spot.itemId != null) {
+                    nav.push(Route.SceneFind(spot.sceneId, spot.subSceneId, spot.itemId))
+                } else {
+                    nav.push(Route.SceneCloseup(spot.sceneId, spot.subSceneId))
+                }
+            }
+        }
     }
 
     val cue = dialogue.text("seguir ▸", textSize = 16.0, color = Palette.brassDim) {
@@ -97,14 +110,18 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
     var boardEnabled = false
     var boardIcon: Container? = null
     var boardCaption: korlibs.korge.view.Text? = null
+    var finishHit: korlibs.korge.view.View? = null
 
     fun refreshPin() {
         val question = speaking
-        val pinned = question != null && engine.isPinned("highlight", "hl_q_${question.id}")
-        boardEnabled = !running && question != null && !pinned
+        val filed = question != null && engine.investigation().filedTestimonies.any {
+            it.suspectId == suspectId && it.questionId == question.id
+        }
+        boardEnabled = !running && question != null && !filed
         boardIcon?.alpha = if (!running && question != null) 1.0 else 0.38
-        boardCaption?.text = if (pinned) "En el tablero" else "Al tablero"
+        boardCaption?.text = if (filed) "Guardada" else "Evidencia"
         cue.visible = running
+        finishHit?.mouseEnabled = running
     }
 
     fun present(text: String, question: Question?, instant: Boolean) {
@@ -118,7 +135,7 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
     }
 
     var carry = 0.0
-    dialogue.solidRect(660.0, 284.0, Colors.WHITE) {
+    finishHit = dialogue.solidRect(660.0, 284.0, Colors.WHITE) {
         position(6.0, 6.0)
         alpha = 0.01
         onClick {
@@ -139,12 +156,12 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
         if (step <= 0) return@addUpdater
         carry -= step
         shown = (shown + step).coerceAtMost(full.length)
-        paint()
         if (shown >= full.length) {
             running = false
             carry = 0.0
-            refreshPin()
         }
+        paint()
+        refreshPin()
     }
 
     val lastId = engine.investigation().interviews[suspectId]
@@ -160,7 +177,7 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
 
     val railX = Desk.W - railW + 20.0
     fun slot(index: Int) = Desk.HEADER + 36.0 + index * 118.0
-    root.interviewIcon(railX, slot(0), nav.assets, ButtonIcons.HIPOTESIS) {
+    root.interviewIcon(railX, slot(0), nav.assets, ButtonIcons.PREGUNTA) {
         root.questionDialog(
             nav,
             suspect,
@@ -185,24 +202,13 @@ fun buildInterview(root: Container, nav: Navigator, suspectId: String) {
         }
     }
     root.text("Notas", textSize = 13.0, color = Palette.paper) { position(railX + 12.0, slot(1) + 68.0) }
-    boardIcon = root.interviewIcon(railX, slot(2), nav.assets, ButtonIcons.AL_TABLERO) {
+    boardIcon = root.interviewIcon(railX, slot(2), nav.assets, ButtonIcons.ACUSAR) {
         if (!boardEnabled) return@interviewIcon
         val question = speaking ?: return@interviewIcon
-        val pinId = "hl_q_${question.id}"
-        engine.saveHighlight(
-            id = pinId,
-            sourceType = "interview",
-            sourceId = suspect.id,
-            sectionId = null,
-            questionId = question.id,
-            text = question.answer,
-            note = "Testimonio",
-        )
-        engine.pin("highlight", pinId, question.answer)
-        refreshPin()
+        if (engine.fileTestimony(suspectId, question.id)) refreshPin()
     }
-    boardCaption = root.text("Al tablero", textSize = 13.0, color = Palette.paper) {
-        position(railX - 6.0, slot(2) + 68.0)
+    boardCaption = root.text("Evidencia", textSize = 13.0, color = Palette.paper) {
+        position(railX - 4.0, slot(2) + 68.0)
     }
     refreshPin()
 }
@@ -455,6 +461,120 @@ fun buildItemDetail(root: Container, nav: Navigator, itemId: String) {
             }
         }
         y + 24.0
+    }
+}
+
+internal data class InterviewSpot(val sceneId: String, val subSceneId: String, val itemId: String?)
+
+internal data class InterviewLink(val start: Int, val endExclusive: Int, val target: InterviewSpot)
+
+private val mentionSkip = setOf(
+    "de", "del", "la", "el", "los", "las", "con", "por", "una", "uno", "para", "sobre", "sus", "su",
+    "the", "and", "for", "with", "from", "that", "this",
+)
+
+internal fun interviewMentions(case: CaseData): List<Pair<String, InterviewSpot>> {
+    val places = case.scenes.flatMap { it.subscenes }.map { it.name.lowercase() }.toSet()
+    val mentions = mutableListOf<Pair<String, InterviewSpot>>()
+    for (scene in case.scenes) {
+        for (sub in scene.subscenes) {
+            val itemIds = sub.items.map { it.itemId }
+            if (sub.name.isNotBlank()) {
+                mentions += sub.name to InterviewSpot(scene.id, sub.id, itemIds.singleOrNull())
+            }
+            for (id in itemIds) {
+                val item = case.items.firstOrNull { it.id == id } ?: continue
+                for (phrase in mentionPhrases(item.name, places)) {
+                    mentions += phrase to InterviewSpot(scene.id, sub.id, id)
+                }
+            }
+        }
+    }
+    return mentions
+        .distinctBy { it.first.lowercase() }
+        .sortedByDescending { it.first.length }
+}
+
+internal fun interviewLinkSpans(text: String, mentions: List<Pair<String, InterviewSpot>>): List<InterviewLink> {
+    val lower = text.lowercase()
+    val taken = BooleanArray(text.length)
+    val found = mutableListOf<InterviewLink>()
+    for ((phrase, target) in mentions) {
+        val needle = phrase.lowercase()
+        if (needle.length < 3) continue
+        var from = 0
+        while (from < lower.length) {
+            val at = lower.indexOf(needle, from)
+            if (at < 0) break
+            val end = at + needle.length
+            val leftOk = at == 0 || !lower[at - 1].isLetter()
+            val rightOk = end >= lower.length || !lower[end].isLetter()
+            val free = (at until end).all { !taken[it] }
+            if (leftOk && rightOk && free) {
+                for (index in at until end) taken[index] = true
+                found += InterviewLink(at, end, target)
+            }
+            from = at + needle.length.coerceAtLeast(1)
+        }
+    }
+    return found.sortedBy { it.start }
+}
+
+private fun mentionPhrases(name: String, places: Set<String>): List<String> {
+    val phrases = mutableListOf(name.trim())
+    Regex("[\\p{L}\\p{N}]+\\s*\\([^)]+\\)").find(name)?.value?.trim()?.let { phrases += it }
+    Regex("\\(([^)]+)\\)").find(name)?.groupValues?.get(1)?.trim()?.let { inner ->
+        if (inner.length >= 4) phrases += inner
+    }
+    val base = name.replace(Regex("\\s*\\([^)]*\\)"), " ").replace(Regex("\\s+"), " ").trim()
+    if (base.isNotEmpty()) phrases += base
+    phrases += base.split(Regex("[^\\p{L}\\p{N}]+"))
+        .filter { word ->
+            val key = word.lowercase()
+            word.length >= 4 && key !in mentionSkip && key !in places
+        }
+    return phrases.filter { it.length >= 3 }.distinctBy { it.lowercase() }
+}
+
+private fun Container.drawLinkedAnswer(
+    text: String,
+    links: List<InterviewLink>,
+    width: Double,
+    textSize: Double,
+    onOpen: (InterviewSpot) -> Unit,
+) {
+    val lineH = textSize * 1.35
+    val gap = textSize * 0.28
+    var cx = 0.0
+    var cy = 0.0
+    for (token in Regex("\\S+").findAll(text)) {
+        val word = token.value
+        val wordW = word.length * textSize * 0.52
+        if (cx > 0.0 && cx + wordW > width) {
+            cx = 0.0
+            cy += lineH
+        }
+        val link = links.firstOrNull { token.range.first < it.endExclusive && token.range.last >= it.start }
+        if (link != null) {
+            solidRect(wordW + 6.0, lineH - 2.0, Palette.gold) {
+                position(cx - 2.0, cy - 1.0)
+                alpha = 0.9
+                mouseEnabled = false
+            }
+        }
+        text(word, textSize = textSize, color = if (link != null) Palette.mahoganyDeep else Palette.ink) {
+            position(cx, cy)
+            mouseEnabled = false
+        }
+        if (link != null) {
+            val spot = link.target
+            solidRect(wordW + gap, lineH, Colors.WHITE) {
+                position(cx, cy)
+                alpha = 0.01
+                onClick { onOpen(spot) }
+            }
+        }
+        cx += wordW + gap
     }
 }
 

@@ -257,8 +257,8 @@ internal val case001 = CasePack(
                     ),
                     Question(
                         id = "q_m2",
-                        question = "¿Quién pasó junto a usted en la puerta?",
-                        answer = "El Dr. Reid. Lo vi entrar mientras yo salía, con su maletín negro. Dijo que solo tardaría un momento en tomarle el pulso a su señoría.",
+                        question = "¿Alguien más salió del estudio mientras usted salía?",
+                        answer = "No. Nadie más salió conmigo. El Dr. Reid entró mientras yo salía, con su maletín negro. Dijo que solo tardaría un momento en tomarle el pulso a su señoría.",
                         revealsClue = "hl_003",
                     ),
                     Question(
@@ -315,7 +315,13 @@ internal val case001 = CasePack(
                             "item_vial"
                         ),
                     ),
+                    Question(
+                        id = "q_r5",
+                        question = "Si otra persona manipuló la sustancia, ¿por qué las únicas huellas del borde de la copa son las suyas?",
+                        answer = "No voy a negar la mano. Aparté la copa para tomarle el pulso. Nadie más la tocó después de que Graves la dejara. Pero apartar una copa no es envenenarla.",
+                        requiredDiscoveryIds = listOf("hl_005"),
                     ),
+                ),
             ),
         ),
 

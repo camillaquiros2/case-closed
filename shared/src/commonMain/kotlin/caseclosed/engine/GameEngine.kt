@@ -5,7 +5,10 @@ import caseclosed.model.CaseData
 import caseclosed.model.CaseInvestigationState
 import caseclosed.model.ClueEntry
 import caseclosed.model.GlobalProgression
+import caseclosed.model.HighlightRange
+import caseclosed.model.ObjectMemory
 import caseclosed.model.Question
+import caseclosed.model.ReferenceType
 import caseclosed.model.Verdict
 import caseclosed.state.GameState
 
@@ -188,6 +191,13 @@ class GameEngine(
         edit { InvestigationRules.askQuestion(it, case, suspectId, question, now()) }
     }
 
+    fun fileTestimony(suspectId: String, questionId: String): Boolean {
+        val case = activeCase()
+        val id = "testimony_${suspectId}_$questionId"
+        edit { InvestigationRules.fileTestimony(it, case, id, suspectId, questionId) }
+        return investigation().filedTestimonies.any { it.id == id }
+    }
+
     fun resetInterview(suspectId: String) {
         edit { InvestigationRules.resetInterview(it, suspectId) }
     }
@@ -259,10 +269,48 @@ class GameEngine(
         edit { InvestigationRules.removeConnection(it, connectionId) }
     }
 
-    fun evaluate(accusedId: String, selectedNodeIds: Set<String>): Verdict {
-        val nodes = investigation().boardNodes.filter { it.id in selectedNodeIds }
-        val entityIds = nodes.map { it.entityId }.toSet()
-        return evaluateIndictment(activeCase().solution, accusedId, entityIds)
+    fun objectMemory(itemId: String): ObjectMemory = MemoryQuery.memory(investigation(), itemId)
+
+    fun saveDocumentFragment(
+        itemId: String,
+        documentId: String,
+        fragment: String,
+        highlights: List<HighlightRange> = emptyList(),
+    ): Boolean {
+        val case = activeCase()
+        val id = ids.next("doclink")
+        edit { InvestigationRules.saveDocumentFragment(it, case, itemId, id, documentId, fragment, highlights) }
+        return objectMemory(itemId).documents.any { it.id == id }
+    }
+
+    fun removeDocumentFragment(itemId: String, connectionId: String) {
+        edit { InvestigationRules.removeDocumentFragment(it, itemId, connectionId) }
+    }
+
+    fun saveMentalNote(
+        itemId: String,
+        noteId: String?,
+        referenceType: ReferenceType,
+        referenceId: String,
+        text: String,
+        highlights: List<HighlightRange>,
+    ): Boolean {
+        val case = activeCase()
+        val id = noteId ?: ids.next("mnote")
+        edit {
+            InvestigationRules.saveMentalNote(it, case, itemId, id, referenceType, referenceId, text, highlights)
+        }
+        return objectMemory(itemId).notes.any { it.id == id && it.text == text.trim() }
+    }
+
+    fun removeMentalNote(itemId: String, noteId: String) {
+        edit { InvestigationRules.removeMentalNote(it, itemId, noteId) }
+    }
+
+    fun evaluate(accusedId: String, selectedMemoryIds: Set<String>): Verdict {
+        val case = activeCase()
+        val entityIds = memoryEvidenceIds(case, investigation(), selectedMemoryIds)
+        return evaluateIndictment(case.solution, accusedId, entityIds)
     }
 
     /** Marks the case solved, clears its investigation, and unlocks the next file. */

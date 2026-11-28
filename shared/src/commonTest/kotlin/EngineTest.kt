@@ -5,10 +5,14 @@ import caseclosed.data.DeskImages
 import caseclosed.data.TutorialSteps
 import caseclosed.engine.GameEngine
 import caseclosed.engine.GameSaves
+import caseclosed.engine.MemoryQuery
 import caseclosed.model.CaseInvestigationState
 import caseclosed.model.ClueKind
 import caseclosed.model.GlobalProgression
+import caseclosed.model.HighlightRange
+import caseclosed.model.ReferenceType
 import caseclosed.model.Verdict
+import kotlinx.serialization.json.Json
 import caseclosed.ui.sentencesOf
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -34,7 +38,14 @@ class EngineTest {
 
         assertEquals(3, engine.investigation().boardNodes.size)
         assertEquals(2, engine.investigation().boardConnections.size)
-        assertTrue(engine.evaluate("suspect_reid", setOf(brandy, vial, quote)) is Verdict.Solved)
+        val phrase = "El Dr. Reid entró mientras yo salía, con su maletín negro, y dijo que solo tardaría un momento en tomarle el pulso a su señoría."
+        assertTrue(engine.saveDocumentFragment("item_brandy", "file_003", phrase))
+        assertTrue(
+            engine.saveMentalNote("item_vial", null, ReferenceType.OBJECT, "item_vial", "Faltan dos dracmas en el frasco.", emptyList()),
+        )
+        val linked = engine.objectMemory("item_brandy").documents.single().id
+        val noted = engine.objectMemory("item_vial").notes.single().id
+        assertTrue(engine.evaluate("suspect_reid", setOf(linked, noted)) is Verdict.Solved)
 
         val reloaded = GameEngine(saves, now = { 50L })
         reloaded.load()
@@ -46,6 +57,160 @@ class EngineTest {
         assertTrue(reloaded.isCompleted("case_001"))
         assertEquals(0, reloaded.state.investigation("case_001").boardNodes.size)
         assertEquals("case_002", reloaded.progression.activeCaseId)
+    }
+
+    @Test
+    fun aMismatchedExtractDoesNotProveTheDoor() {
+        val engine = GameEngine(MemoryGameSaves(), now = { 1L })
+        engine.load()
+        assertTrue(
+            engine.saveDocumentFragment(
+                "item_brandy",
+                "file_001",
+                "El cuerpo estaba desplomado sobre el secante. Una copa de cristal se encontraba al alcance de su mano derecha.",
+            ),
+        )
+        assertTrue(
+            engine.saveMentalNote("item_vial", null, ReferenceType.OBJECT, "item_vial", "Faltan dos dracmas en el frasco.", emptyList()),
+        )
+        val linked = engine.objectMemory("item_brandy").documents.single().id
+        val noted = engine.objectMemory("item_vial").notes.single().id
+        assertTrue(engine.evaluate("suspect_reid", setOf(linked, noted)) is Verdict.Rejected)
+    }
+
+    @Test
+    fun labExtractsFiledOnTheVialCloseTheCaseWithGraves() {
+        val engine = GameEngine(MemoryGameSaves(), now = { 1L })
+        engine.load()
+        val morris = engine.activeCase().suspects.first { it.id == "suspect_morris" }
+        engine.askQuestion("suspect_morris", morris.questions.first { it.id == "q_m2" })
+        assertTrue(engine.fileTestimony("suspect_morris", "q_m2"))
+        assertTrue(
+            engine.saveDocumentFragment(
+                "item_vial",
+                "file_002",
+                "El residuo blanco en el interior de la copa es belladona (veneno) concentrada.",
+            ),
+        )
+        assertTrue(
+            engine.saveDocumentFragment(
+                "item_vial",
+                "file_002",
+                "Las huellas en el borde de la copa coinciden con las del Dr. Alistair Reid.",
+            ),
+        )
+        val extracts = engine.objectMemory("item_vial").documents.map { it.id }
+        val testimony = engine.investigation().filedTestimonies.single().id
+        assertTrue(engine.evaluate("suspect_reid", (extracts + testimony).toSet()) is Verdict.Solved)
+    }
+
+    @Test
+    fun aFiledAnswerCountsAsItsClue() {
+        val engine = GameEngine(MemoryGameSaves(), now = { 1L })
+        engine.load()
+        val morris = engine.activeCase().suspects.first { it.id == "suspect_morris" }
+        val question = morris.questions.first { it.id == "q_m2" }
+        engine.askQuestion("suspect_morris", question)
+        assertTrue(engine.fileTestimony("suspect_morris", "q_m2"))
+        assertTrue(
+            engine.saveMentalNote("item_brandy", null, ReferenceType.PERSON, "suspect_reid", "Reid estuvo allí con el maletín negro.", emptyList()),
+        )
+        assertTrue(
+            engine.saveMentalNote("item_brandy", null, ReferenceType.OBJECT, "item_brandy", "La copa de brandy tiene el residuo.", emptyList()),
+        )
+        assertTrue(
+            engine.saveMentalNote("item_vial", null, ReferenceType.OBJECT, "item_vial", "Faltan dos dracmas en el frasco.", emptyList()),
+        )
+        val testimony = engine.investigation().filedTestimonies.single().id
+        val brandy = engine.objectMemory("item_brandy").notes.first { it.referenceType == ReferenceType.OBJECT }.id
+        val vial = engine.objectMemory("item_vial").notes.single().id
+        assertTrue(engine.evaluate("suspect_reid", setOf(testimony, brandy, vial)) is Verdict.Solved)
+    }
+
+    @Test
+    fun linkedGravesPhraseCountsAsTheStudyClue() {
+        val engine = GameEngine(MemoryGameSaves(), now = { 1L })
+        engine.load()
+        val phrase = "El Dr. Reid entró mientras yo salía, con su maletín negro, y dijo que solo tardaría un momento en tomarle el pulso a su señoría."
+        assertTrue(engine.saveDocumentFragment("item_brandy", "file_003", phrase))
+        assertTrue(
+            engine.saveMentalNote("item_brandy", null, ReferenceType.OBJECT, "item_vial", "El frasco del maletín está incompleto.", emptyList()),
+        )
+        val linked = engine.objectMemory("item_brandy").documents.single().id
+        val noted = engine.objectMemory("item_brandy").notes.single().id
+        assertTrue(engine.evaluate("suspect_reid", setOf(linked, noted)) is Verdict.Solved)
+    }
+
+    @Test
+    fun objectReplyUsesTheScriptThePlayerCanAlreadyHear() {
+        val engine = GameEngine(MemoryGameSaves(), now = { 1L })
+        engine.load()
+        val case = engine.activeCase()
+        val brandy = case.items.first { it.id == "item_brandy" }
+        val morris = MemoryQuery.reply(case, engine.investigation(), "suspect_morris", brandy)
+        assertTrue(morris.contains("serví", ignoreCase = true))
+        val eleanor = MemoryQuery.reply(case, engine.investigation(), "suspect_eleanor", brandy)
+        assertTrue(eleanor.startsWith("No sabría"))
+        val lamp = case.items.first { it.id == "item_lamp" }
+        val aboutLamp = MemoryQuery.reply(case, engine.investigation(), "suspect_reid", lamp)
+        assertTrue(aboutLamp.startsWith("No sabría"))
+    }
+
+    @Test
+    fun memoryStaysOnEachObjectAndReloads() {
+        val saves = MemoryGameSaves()
+        val engine = GameEngine(saves, now = { 1L })
+        engine.load()
+        repeat(5) { index ->
+            val saved = engine.saveDocumentFragment("item_brandy", "file_001", "Frase $index del brandy.")
+            if (index < 4) assertTrue(saved) else assertFalse(saved)
+        }
+        assertEquals(4, engine.objectMemory("item_brandy").documents.size)
+        assertTrue(engine.objectMemory("item_pillbox").documents.isEmpty())
+        val first = engine.objectMemory("item_brandy").documents.first().id
+        engine.removeDocumentFragment("item_brandy", first)
+        assertEquals(3, engine.objectMemory("item_brandy").documents.size)
+        assertTrue(
+            engine.saveMentalNote(
+                "item_brandy",
+                null,
+                ReferenceType.PERSON,
+                "suspect_morris",
+                "Morris dejó la bandeja.",
+                listOf(HighlightRange(0, 6)),
+            ),
+        )
+        assertTrue(
+            engine.saveMentalNote(
+                "item_brandy",
+                null,
+                ReferenceType.OBJECT,
+                "item_vial",
+                "Alguna nota importante",
+                listOf(HighlightRange(7, 11)),
+            ),
+        )
+        assertFalse(engine.saveMentalNote("item_brandy", null, ReferenceType.OBJECT, "missing", "Nada", emptyList()))
+        val reloaded = GameEngine(saves, now = { 2L })
+        reloaded.load()
+        val notes = reloaded.objectMemory("item_brandy").notes
+        val person = notes.first { it.referenceType == ReferenceType.PERSON }
+        assertEquals("suspect_morris", person.referenceId)
+        assertEquals("Morris dejó la bandeja.", person.text)
+        val note = notes.first { it.referenceType == ReferenceType.OBJECT }
+        assertEquals("Alguna nota importante", note.text)
+        assertEquals(ReferenceType.OBJECT, note.referenceType)
+        assertEquals(7, note.highlights.single().start)
+        assertEquals(11, note.highlights.single().endExclusive)
+        assertEquals(3, reloaded.objectMemory("item_brandy").documents.size)
+    }
+
+    @Test
+    fun oldInvestigationJsonOmitsMemoryAndStillLoads() {
+        val json = Json { ignoreUnknownKeys = true }
+        val state = json.decodeFromString<CaseInvestigationState>("""{"discoveredItemIds":["item_brandy"]}""")
+        assertEquals(listOf("item_brandy"), state.discoveredItemIds)
+        assertTrue(state.objectMemories.isEmpty())
     }
 
     @Test

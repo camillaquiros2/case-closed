@@ -190,24 +190,23 @@ private fun renderSection(
 ): Double {
     val engine = nav.engine
     var y = startY
-    content.solidRect(width - 32.0, 3.0, Palette.brass) { position(16.0, y) }
-    y += 14.0
-    content.text(section.heading, textSize = 22.0, color = Palette.ink) { position(16.0, y) }
-    y += 36.0
+    if (section.heading.isNotBlank()) y += content.penHeading(section.heading, 28.0, y, width - 64.0)
     val highlights = engine.investigation().highlights
-    for (sentence in sentencesOf(section.content)) {
-        val saved = highlights.find { it.sourceId == file.id && it.text == sentence }
-        val row = content.container { position(16.0, 0.0) }
-        val h = row.sentenceBlock(sentence, saved?.note, width - 32.0, y, onTap = {
+    val saved = highlights.filter { it.sourceId == file.id && (it.sectionId == section.id || it.sectionId == null) }
+    val marks = section.highlightableClues.orEmpty().map { it.text } + saved.map { it.text }
+    val notes = saved.filter { it.note.isNotBlank() }.associate { it.text to it.note }
+    if (section.content.isNotBlank()) {
+        y += content.annotatedProse(section.content, 32.0, y, width - 64.0, 19.0, marks, notes) { sentence ->
+            val known = saved.find { it.text == sentence }
             host.noteEditor(
                 title = "Extracto",
                 body = sentence,
-                initial = saved?.note ?: "",
+                initial = known?.note ?: "",
                 allowPin = true,
                 assets = nav.assets,
             ) { note, pin ->
                 val id = engine.saveHighlight(
-                    id = saved?.id,
+                    id = known?.id,
                     sourceType = "document",
                     sourceId = file.id,
                     sectionId = section.id,
@@ -218,8 +217,8 @@ private fun renderSection(
                 if (pin) engine.pin("highlight", id, sentence)
                 nav.refresh()
             }
-        })
-        y += h
+        }
+        y += 8.0
     }
     section.image?.let { image ->
         val frame = content.container { position(16.0, y) }
